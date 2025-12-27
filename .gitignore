@@ -89,3 +89,4 @@ sonarqube-project.properties
 .gradletasknamecache
 .profile
 vcs.xml
+!gradle/wrapper/gradle-wrapper.jar
