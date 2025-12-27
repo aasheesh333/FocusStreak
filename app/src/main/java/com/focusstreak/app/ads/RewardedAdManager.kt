@@ -2,6 +2,7 @@ package com.focusstreak.app.ads
 
 import android.app.Activity
 import android.content.Context
+import com.focusstreak.app.BuildConfig
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.rewarded.RewardedAd
@@ -15,7 +16,7 @@ class RewardedAdManager(private val context: Context) {
         val adRequest = AdRequest.Builder().build()
         RewardedAd.load(
             context,
-            "ca-app-pub-3940256099942544/5224354917", // Test ID
+            BuildConfig.ADMOB_REWARDED_ID,
             adRequest,
             object : RewardedAdLoadCallback() {
                 override fun onAdFailedToLoad(adError: LoadAdError) {

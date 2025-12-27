@@ -41,6 +41,7 @@ import com.focusstreak.app.navigation.Screen
 import com.focusstreak.app.ui.theme.AccentFire
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import com.focusstreak.app.viewmodel.HomeViewModel
+import com.focusstreak.app.BuildConfig
 import com.focusstreak.app.viewmodel.TimerState
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
@@ -218,7 +219,7 @@ fun Footer(timerState: TimerState, viewModel: HomeViewModel) {
             factory = { context ->
                 AdView(context).apply {
                     setAdSize(AdSize.BANNER)
-                    adUnitId = "ca-app-pub-3940256099942544/6300978111" // Test ID
+                    adUnitId = BuildConfig.ADMOB_BANNER_ID
                     loadAd(AdRequest.Builder().build())
                 }
             }

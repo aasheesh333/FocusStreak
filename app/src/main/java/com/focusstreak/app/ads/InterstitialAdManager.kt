@@ -2,6 +2,7 @@ package com.focusstreak.app.ads
 
 import android.app.Activity
 import android.content.Context
+import com.focusstreak.app.BuildConfig
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.interstitial.InterstitialAd
@@ -16,7 +17,7 @@ class InterstitialAdManager(private val context: Context) {
         val adRequest = AdRequest.Builder().build()
         InterstitialAd.load(
             context,
-            "ca-app-pub-3940256099942544/1033173712", // Test ID
+            BuildConfig.ADMOB_INTERSTITIAL_ID,
             adRequest,
             object : InterstitialAdLoadCallback() {
                 override fun onAdFailedToLoad(adError: LoadAdError) {

@@ -331,8 +331,18 @@ fun AboutSection() {
             SettingItem(stringResource(id = R.string.rate_us), Icons.Default.Star) {
                 // TODO: Implement rate us
             }
+            val context = LocalContext.current
             SettingItem(stringResource(id = R.string.privacy_policy), Icons.Default.Lock) {
-                // TODO: Implement privacy policy
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/privacy"))
+                context.startActivity(intent)
+            }
+            SettingItem("Terms & Conditions", Icons.Default.Description) {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/terms"))
+                context.startActivity(intent)
+            }
+            SettingItem("Ads Policy Disclosure", Icons.Default.Info) {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/ads"))
+                context.startActivity(intent)
             }
             Row(
                 modifier = Modifier
