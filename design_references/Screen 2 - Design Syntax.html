@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Session Complete Modal</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#7f13ec",
+              "on-primary": "#ffffff",
+              "primary-container": "#f0dbff",
+              "on-primary-container": "#2e004e",
+              "background-light": "#fdf8fd",
+              "background-dark": "#191022",
+              "surface-light": "#f3eff6",
+              "surface-dark": "#231a2e",
+            },
+            fontFamily: {
+              "display": ["Plus Jakarta Sans", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "1.5rem", "xl": "2rem", "2xl": "2.5rem", "full": "9999px"},
+            animation: {
+                'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                'float': 'float 3s ease-in-out infinite',
+            },
+            keyframes: {
+                float: {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-10px)' },
+                }
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+          min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-white overflow-hidden select-none">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<div class="absolute inset-0 overflow-hidden pointer-events-none">
+<div class="absolute -top-[10%] -right-[10%] w-[300px] h-[300px] md:w-[500px] md:h-[500px] rounded-full bg-primary/20 blur-[80px] md:blur-[120px]"></div>
+<div class="absolute top-[30%] -left-[10%] w-[250px] h-[250px] md:w-[400px] md:h-[400px] rounded-full bg-indigo-500/10 blur-[60px] md:blur-[100px]"></div>
+<div class="absolute -bottom-[20%] left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-primary/15 blur-[100px]"></div>
+</div>
+<div class="relative z-10 flex w-full items-center justify-end p-4 pt-12 md:pt-6">
+<button aria-label="Close modal" class="flex items-center justify-center w-12 h-12 rounded-full bg-surface-light dark:bg-white/10 hover:bg-black/5 dark:hover:bg-white/20 active:scale-95 transition-all cursor-pointer text-gray-600 dark:text-gray-300">
+<span class="material-symbols-outlined text-2xl">close</span>
+</button>
+</div>
+<div class="flex-1 flex flex-col items-center justify-center p-6 z-10 w-full max-w-md mx-auto">
+<div class="relative mb-8 group animate-float">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-primary/30 rounded-full blur-[60px] animate-pulse-slow"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-primary/50 rounded-full blur-[30px]"></div>
+<div class="relative flex items-center justify-center w-28 h-28 rounded-3xl rotate-3 bg-gradient-to-br from-[#a855f7] to-primary shadow-2xl shadow-primary/40 ring-4 ring-white/20 dark:ring-white/10 backdrop-blur-xl">
+<span class="material-symbols-outlined text-white text-[56px] fill-1 drop-shadow-md -rotate-3">trophy</span>
+</div>
+<div class="absolute -top-6 -right-8 animate-bounce" style="animation-duration: 4s;">
+<div class="text-3xl drop-shadow-lg filter rotate-12">✨</div>
+</div>
+<div class="absolute bottom-0 -left-10 animate-bounce" style="animation-duration: 3s; animation-delay: 0.2s;">
+<div class="text-2xl drop-shadow-lg filter -rotate-12">🎉</div>
+</div>
+<div class="absolute top-0 -left-4 animate-pulse" style="animation-duration: 2s;">
+<div class="w-3 h-3 rounded-full bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.8)]"></div>
+</div>
+<div class="absolute bottom-4 -right-4 animate-pulse" style="animation-duration: 2.5s; animation-delay: 1s;">
+<div class="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.8)]"></div>
+</div>
+</div>
+<div class="text-center mb-8 space-y-3 w-full">
+<h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-[1.1]">
+                    Session <br/> Complete <span class="inline-block origin-bottom-right hover:rotate-12 transition-transform cursor-default">🎉</span>
+</h1>
+<p class="text-lg font-medium text-gray-500 dark:text-gray-400 px-4 leading-relaxed max-w-xs mx-auto">
+                    Great focus! Your streak is safe today.
+                </p>
+</div>
+<button aria-label="Get bonus focus time" class="group w-full mb-8 relative overflow-hidden rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-500/20 active:scale-[0.98] transition-all p-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center shrink-0 text-primary">
+<span class="material-symbols-outlined fill-1">play_circle</span>
+</div>
+<div class="flex-1 text-left">
+<div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Get bonus focus time</div>
+<div class="text-xs text-gray-500 dark:text-gray-400">Watch a short video</div>
+</div>
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-500 group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<div class="w-full space-y-3 flex flex-col">
+<button aria-label="Start Another Session" class="w-full h-16 bg-primary hover:bg-[#6c0fcc] text-white font-bold text-lg rounded-full flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-lg shadow-primary/25 hover:shadow-primary/40 relative overflow-hidden">
+<div class="absolute inset-0 bg-white/10 translate-y-full hover:translate-y-0 transition-transform duration-300 rounded-full"></div>
+<span class="material-symbols-outlined text-[24px]">timer</span>
+                    Start Another Session
+                </button>
+<button aria-label="Take a Break" class="w-full h-16 bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 font-bold text-lg rounded-full flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[24px]">local_cafe</span>
+                    Take a Break
+                </button>
+</div>
+</div>
+</div>
+
+</body></html>
