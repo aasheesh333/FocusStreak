@@ -1,16 +1,25 @@
 package com.focusstreak.app.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.LocalCafe
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -18,8 +27,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.focusstreak.app.R
 import com.focusstreak.app.ui.theme.FocusStreakTheme
+
+// --- Colors matching Home Screen Dark Theme ---
+private val DialogBackground = Color(0xFF0F0A1E)
+private val SurfaceColor = Color(0xFF1A1625) // Slightly lighter for cards/surfaces if needed, or stick to solid background
+private val TextWhite = Color.White
+private val TextGrey = Color(0xFF888888)
+private val AccentPurple = Color(0xFF7000FF)
+private val AccentPurpleLight = Color(0xFFA040FF)
+private val CardDarkBg = Color(0xFF1C182F) // For the Bonus Card
 
 @Composable
 fun SessionCompleteDialog(
@@ -28,59 +47,213 @@ fun SessionCompleteDialog(
     onTakeBreak: () -> Unit,
     onGetBonusTime: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    // Full screen dialog properties
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface
+            modifier = Modifier.fillMaxSize(),
+            color = DialogBackground
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp)
             ) {
-                IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                    Icon(imageVector = Icons.Default.Close, contentDescription = stringResource(id = R.string.cancel), tint = MaterialTheme.colorScheme.onSurface)
+                // Close Button
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                        .size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(id = R.string.cancel),
+                        tint = TextWhite,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-                Icon(
-                    imageVector = Icons.Filled.CardGiftcard,
-                    contentDescription = stringResource(id = R.string.session_complete),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(128.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = stringResource(id = R.string.session_complete),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(id = R.string.great_focus),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-                Button(onClick = onStartAnotherSession, modifier = Modifier.fillMaxWidth()) {
-                    Icon(imageVector = Icons.Default.Timer, contentDescription = stringResource(id = R.string.start_another_session))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = stringResource(id = R.string.start_another_session))
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(onClick = onTakeBreak, modifier = Modifier.fillMaxWidth()) {
-                    Icon(imageVector = Icons.Default.Refresh, contentDescription = stringResource(id = R.string.take_a_break))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = stringResource(id = R.string.take_a_break))
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                TextButton(onClick = onGetBonusTime) {
-                    Text(text = stringResource(id = R.string.get_bonus_focus_time))
+
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Trophy Icon Section
+                    Box(contentAlignment = Alignment.Center) {
+                        // Decorative elements (confetti/stars)
+                        Icon(
+                            imageVector = Icons.Filled.AutoAwesome,
+                            contentDescription = null,
+                            tint = Color(0xFFFFD700), // Gold
+                            modifier = Modifier
+                                .size(40.dp)
+                                .align(Alignment.TopEnd)
+                                .offset(x = 24.dp, y = (-20).dp)
+                        )
+                         Icon(
+                            imageVector = Icons.Filled.AutoAwesome,
+                            contentDescription = null,
+                            tint = FireOrange,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .align(Alignment.BottomStart)
+                                .offset(x = (-24).dp, y = 10.dp)
+                        )
+
+                        // Main Trophy Box
+                        Box(
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(RoundedCornerShape(32.dp))
+                                .background(
+                                    Brush.linearGradient(
+                                        colors = listOf(AccentPurpleLight, AccentPurple)
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.EmojiEvents,
+                                contentDescription = null,
+                                tint = TextWhite,
+                                modifier = Modifier.size(64.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Text
+                    Text(
+                        text = stringResource(id = R.string.session_complete) + " \uD83C\uDF89", // Party popper emoji
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextWhite,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 40.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(id = R.string.great_focus),
+                        color = TextGrey,
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(48.dp))
+
+                    // Bonus Card
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(CardDarkBg)
+                            .clickable(onClick = onGetBonusTime)
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF2D2644)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = null,
+                                tint = AccentPurpleLight,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(id = R.string.get_bonus_focus_time),
+                                color = TextWhite,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                            Text(
+                                text = "Watch a short video", // Hardcoded as per design or add to strings
+                                color = TextGrey,
+                                fontSize = 12.sp
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = TextGrey
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Main Action Button
+                    Button(
+                        onClick = onStartAnotherSession,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        contentPadding = PaddingValues(0.dp),
+                        shape = RoundedCornerShape(32.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.horizontalGradient(
+                                        colors = listOf(AccentPurpleLight, AccentPurple)
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Timer, contentDescription = null, tint = TextWhite)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = stringResource(id = R.string.start_another_session),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextWhite
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Secondary Action
+                    TextButton(
+                        onClick = onTakeBreak
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.LocalCafe,
+                            contentDescription = null,
+                            tint = TextWhite
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(id = R.string.take_a_break),
+                            color = TextWhite,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+// Re-define local color for now to avoid dependency issues if not in Theme.kt
+private val FireOrange = Color(0xFFFF5722)
 
 @Preview
 @Composable

@@ -1,8 +1,10 @@
 package com.focusstreak.app.ui
 
 import android.app.Activity
+import android.graphics.BlurMaskFilter
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -17,9 +19,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -27,22 +33,32 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.focusstreak.app.BuildConfig
 import com.focusstreak.app.R
 import com.focusstreak.app.navigation.Screen
-import com.focusstreak.app.ui.theme.AccentFire
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import com.focusstreak.app.viewmodel.HomeViewModel
-import com.focusstreak.app.BuildConfig
 import com.focusstreak.app.viewmodel.TimerState
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
+
+// --- Colors from Home Design (Dark Theme) ---
+private val HomeBackground = Color(0xFF0F0A1E)
+private val TextWhite = Color.White
+private val TextGrey = Color(0xFF888888)
+private val AccentPurple = Color(0xFF7000FF)
+private val AccentPurpleLight = Color(0xFFA040FF)
+private val TimerGlowColor = Color(0xFF5000B8)
+// Fallback if AccentFire isn't resolved from theme
+private val FireOrange = Color(0xFFFF5722)
 
 @Composable
 fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = viewModel()) {
@@ -52,9 +68,10 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
     val totalTime = userPreferences.focusDuration * 60 * 1000L
     val context = LocalContext.current as Activity
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(HomeBackground)
     ) {
         Column(
             modifier = Modifier
@@ -64,7 +81,14 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             HomeHeader(navController, userPreferences.currentStreak)
-            Timer(timeInMillis, totalTime)
+
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Timer(timeInMillis, totalTime)
+            }
+
             Footer(timerState, homeViewModel)
         }
     }
@@ -89,34 +113,42 @@ fun HomeHeader(navController: NavController, currentStreak: Int) {
     val dayStreakDesc = stringResource(id = R.string.day_streak)
     val daysText = stringResource(id = R.string.days, currentStreak)
     val momentumText = stringResource(id = R.string.keep_the_momentum)
+
     val fireIcon = ImageVector.vectorResource(id = R.drawable.ic_fire)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(top = 32.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp)
     ) {
-        Row(
+        // Top Bar
+        Box(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
         ) {
-            Spacer(modifier = Modifier.width(40.dp))
             Text(
-                text = focusStreakText,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                text = focusStreakText.uppercase(),
+                color = TextGrey,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
-                fontSize = 12.sp
+                fontSize = 12.sp,
+                modifier = Modifier.align(Alignment.Center)
             )
-            IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
+            IconButton(
+                onClick = { navController.navigate(Screen.Settings.route) },
+                modifier = Modifier.align(Alignment.CenterEnd)
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Settings,
                     contentDescription = settingsDesc,
-                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                    tint = TextGrey
                 )
             }
         }
-        Spacer(modifier = Modifier.height(32.dp))
+
+        Spacer(modifier = Modifier.height(48.dp))
+
+        // Streak Section
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.clickable { navController.navigate(Screen.Progress.route) }
@@ -124,23 +156,26 @@ fun HomeHeader(navController: NavController, currentStreak: Int) {
             Icon(
                 imageVector = fireIcon,
                 contentDescription = dayStreakDesc,
-                tint = AccentFire,
-                modifier = Modifier.size(48.dp)
+                tint = FireOrange,
+                modifier = Modifier.size(32.dp)
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = daysText,
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 48.sp,
+                color = TextWhite,
+                fontSize = 40.sp,
                 fontWeight = FontWeight.Bold
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         Text(
             text = momentumText,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+            color = TextGrey,
             textAlign = TextAlign.Center,
-            modifier = Modifier.width(240.dp)
+            fontSize = 14.sp,
+            modifier = Modifier.width(260.dp)
         )
     }
 }
@@ -150,43 +185,81 @@ fun Timer(timeInMillis: Long, totalTime: Long) {
     val minutes = (timeInMillis / 1000 / 60).toString().padStart(2, '0')
     val seconds = (timeInMillis / 1000 % 60).toString().padStart(2, '0')
     val progress = if (totalTime > 0) (totalTime - timeInMillis) / totalTime.toFloat() else 0f
-    val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
-    val progressColor = MaterialTheme.colorScheme.primary
+
+    val ringSize = 280.dp
+    val strokeWidth = 12.dp
+    val glowColor = TimerGlowColor
+    val progressBrush = Brush.verticalGradient(
+        colors = listOf(AccentPurpleLight, AccentPurple)
+    )
 
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(300.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(16.dp)
+        modifier = Modifier.size(ringSize + 40.dp) // Extra space for glow
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        Canvas(modifier = Modifier.size(ringSize)) {
+            // Background Track
             drawArc(
-                color = trackColor,
+                color = Color.White.copy(alpha = 0.05f),
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
-                style = Stroke(width = 8f)
+                style = Stroke(width = strokeWidth.toPx())
             )
-            drawArc(
-                color = progressColor,
-                startAngle = -90f,
-                sweepAngle = 360 * progress,
-                useCenter = false,
-                style = Stroke(width = 12f, cap = StrokeCap.Round)
-            )
+
+            // Progress Arc with Glow
+            // We verify if progress is > 0 to draw
+            if (progress < 1f) {
+                // Assuming "time remaining": 25:00 -> 00:00.
+                // Progress 0 = Full Time. Progress 1 = Time Up.
+                // We want to draw the REMAINING time.
+                val remainingSweep = 360f * (timeInMillis.toFloat() / totalTime.toFloat())
+
+                // Glow effect using native canvas
+                drawIntoCanvas { canvas ->
+                    val paint = Paint()
+                    val frameworkPaint = paint.asFrameworkPaint()
+                    frameworkPaint.color = glowColor.toArgb()
+                    frameworkPaint.style = android.graphics.Paint.Style.STROKE
+                    frameworkPaint.strokeWidth = strokeWidth.toPx()
+                    frameworkPaint.strokeCap = android.graphics.Paint.Cap.ROUND
+                    frameworkPaint.maskFilter = BlurMaskFilter(40f, BlurMaskFilter.Blur.NORMAL)
+
+                    canvas.drawArc(
+                        left = 0f + strokeWidth.toPx()/2,
+                        top = 0f + strokeWidth.toPx()/2,
+                        right = size.width - strokeWidth.toPx()/2,
+                        bottom = size.height - strokeWidth.toPx()/2,
+                        startAngle = -90f,
+                        sweepAngle = remainingSweep,
+                        useCenter = false,
+                        paint = paint
+                    )
+                }
+
+                // Main Gradient Arc
+                drawArc(
+                    brush = progressBrush,
+                    startAngle = -90f,
+                    sweepAngle = remainingSweep,
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
+                )
+            }
         }
-        androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
+
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = stringResource(id = R.string.time_format, minutes, seconds),
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 80.sp,
-                fontWeight = FontWeight.Bold
+                text = "$minutes:$seconds",
+                color = TextWhite,
+                fontSize = 72.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-2).sp
             )
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = stringResource(id = R.string.pomodoro),
-                color = MaterialTheme.colorScheme.primary,
+                text = stringResource(id = R.string.pomodoro).uppercase(),
+                color = AccentPurple,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
                 fontSize = 12.sp
@@ -199,61 +272,123 @@ fun Timer(timeInMillis: Long, totalTime: Long) {
 fun Footer(timerState: TimerState, viewModel: HomeViewModel) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(bottom = 32.dp)
+        modifier = Modifier.padding(bottom = 16.dp)
     ) {
+        val buttonModifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp)
+            .clip(RoundedCornerShape(32.dp))
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(AccentPurpleLight, AccentPurple)
+                )
+            )
+
         when (timerState) {
             is TimerState.Idle -> {
-                PrimaryButton(stringResource(id = R.string.start_focus), Icons.Filled.PlayArrow) { viewModel.startTimer() }
+                GradientButton(
+                    text = stringResource(id = R.string.start_focus),
+                    icon = Icons.Filled.PlayArrow,
+                    modifier = buttonModifier,
+                    onClick = { viewModel.startTimer() }
+                )
             }
             is TimerState.Running -> {
-                PrimaryButton(stringResource(id = R.string.pause), Icons.Filled.Pause) { viewModel.pauseTimer() }
+                GradientButton(
+                    text = stringResource(id = R.string.pause),
+                    icon = Icons.Filled.Pause,
+                    modifier = buttonModifier,
+                    onClick = { viewModel.pauseTimer() }
+                )
             }
             is TimerState.Paused -> {
-                Row {
-                    PrimaryButton(stringResource(id = R.string.resume), Icons.Filled.PlayArrow) { viewModel.resumeTimer() }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    PrimaryButton(stringResource(id = R.string.end), Icons.Filled.Stop, color = Color.Gray) { viewModel.endTimer() }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    GradientButton(
+                        text = stringResource(id = R.string.resume),
+                        icon = Icons.Filled.PlayArrow,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(64.dp)
+                            .clip(RoundedCornerShape(32.dp))
+                            .background(Brush.horizontalGradient(colors = listOf(AccentPurpleLight, AccentPurple))),
+                        onClick = { viewModel.resumeTimer() }
+                    )
+
+                    // End Button (Secondary style)
+                    Button(
+                        onClick = { viewModel.endTimer() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(64.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.1f)),
+                        shape = RoundedCornerShape(32.dp)
+                    ) {
+                        Icon(Icons.Filled.Stop, contentDescription = null, tint = TextWhite)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(id = R.string.end), color = TextWhite, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             is TimerState.Completed -> {
-                PrimaryButton(stringResource(id = R.string.start_another_session), Icons.Filled.PlayArrow) { viewModel.startTimer() }
+                GradientButton(
+                    text = stringResource(id = R.string.start_another_session),
+                    icon = Icons.Filled.PlayArrow,
+                    modifier = buttonModifier,
+                    onClick = { viewModel.startTimer() }
+                )
             }
         }
+
         Spacer(modifier = Modifier.height(32.dp))
-        AndroidView(
-            modifier = Modifier.fillMaxWidth(),
-            factory = { context ->
-                AdView(context).apply {
-                    setAdSize(AdSize.BANNER)
-                    adUnitId = BuildConfig.ADMOB_BANNER_ID
-                    loadAd(AdRequest.Builder().build())
+
+        // Ad Space Placeholder
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.White.copy(alpha = 0.05f))
+                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+             AndroidView(
+                modifier = Modifier.wrapContentSize(),
+                factory = { context ->
+                    AdView(context).apply {
+                        setAdSize(AdSize.BANNER)
+                        adUnitId = BuildConfig.ADMOB_BANNER_ID
+                        loadAd(AdRequest.Builder().build())
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
 
 @Composable
-fun PrimaryButton(text: String, icon: ImageVector, color: Color = MaterialTheme.colorScheme.primary, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .defaultMinSize(minWidth = 150.dp)
-            .height(72.dp)
-            .clip(CircleShape),
-        colors = ButtonDefaults.buttonColors(containerColor = color)
+fun GradientButton(
+    text: String,
+    icon: ImageVector,
+    modifier: Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier.clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = icon,
-                contentDescription = text,
-                modifier = Modifier.size(32.dp)
+                contentDescription = null,
+                tint = TextWhite,
+                modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = text,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = TextWhite
             )
         }
     }
@@ -261,7 +396,7 @@ fun PrimaryButton(text: String, icon: ImageVector, color: Color = MaterialTheme.
 
 @Preview(showBackground = true)
 @Composable
-fun DefaultPreview() {
+fun HomeScreenPreview() {
     FocusStreakTheme {
         HomeScreen(rememberNavController())
     }
