@@ -1,6 +1,9 @@
 package com.focusstreak.app.ui
 
+import android.app.Activity
 import android.app.TimePickerDialog
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -59,13 +62,19 @@ private val IconTintBlue = Color(0xFF2196F3)
 private val ToggleActiveTrack = Color(0xFF6750A4)
 private val ToggleInactiveTrack = Color(0xFFE0E0E0)
 
+fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
 @Composable
 fun SettingsScreen(navController: NavController, settingsViewModel: SettingsViewModel = viewModel()) {
     var showResetDialog by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = ScreenBackground
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             SettingsHeader(navController)
@@ -484,8 +493,11 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
 
 @Composable
 fun AppearanceSectionContent(viewModel: SettingsViewModel) {
+    val context = LocalContext.current
     val userPreferences by viewModel.userPreferencesFlow.collectAsState(initial = null)
     val selectedTheme = userPreferences?.theme ?: "System"
+    var showAdDialog by remember { mutableStateOf(false) }
+    var pendingTheme by remember { mutableStateOf<String?>(null) }
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         SettingsIcon(icon = Icons.Filled.Palette, bgColor = IconBgPurple, tint = IconTintPurple)
@@ -504,26 +516,71 @@ fun AppearanceSectionContent(viewModel: SettingsViewModel) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Light
         ThemeOptionCard(
             title = stringResource(id = R.string.light),
             icon = Icons.Filled.WbSunny,
             isSelected = selectedTheme == "Light",
             modifier = Modifier.weight(1f)
-        ) { viewModel.updateTheme("Light") }
+        ) {
+            if (selectedTheme != "Light") {
+                pendingTheme = "Light"
+                showAdDialog = true
+            }
+        }
 
+        // Dark
         ThemeOptionCard(
             title = stringResource(id = R.string.dark),
             icon = Icons.Filled.DarkMode,
             isSelected = selectedTheme == "Dark",
             modifier = Modifier.weight(1f)
-        ) { viewModel.updateTheme("Dark") }
+        ) {
+             if (selectedTheme != "Dark") {
+                pendingTheme = "Dark"
+                showAdDialog = true
+            }
+        }
 
+        // System
         ThemeOptionCard(
             title = stringResource(id = R.string.system),
             icon = Icons.Filled.Smartphone,
             isSelected = selectedTheme == "System",
             modifier = Modifier.weight(1f)
-        ) { viewModel.updateTheme("System") }
+        ) {
+             if (selectedTheme != "System") {
+                pendingTheme = "System"
+                showAdDialog = true
+            }
+        }
+    }
+
+    if (showAdDialog && pendingTheme != null) {
+        AlertDialog(
+            onDismissRequest = { showAdDialog = false },
+            title = { Text(stringResource(id = R.string.change_theme)) },
+            text = { Text(stringResource(id = R.string.watch_ad_to_apply_theme)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showAdDialog = false
+                        val activity = context.findActivity()
+                        if (activity != null && pendingTheme != null) {
+                            viewModel.showThemeAd(activity, pendingTheme!!)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = ToggleActiveTrack)
+                ) {
+                    Text(stringResource(id = R.string.watch_ad))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAdDialog = false }) {
+                    Text(stringResource(id = R.string.cancel))
+                }
+            }
+        )
     }
 }
 

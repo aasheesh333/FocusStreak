@@ -21,6 +21,7 @@ sealed class TimerState {
     object Idle : TimerState()
     object Running : TimerState()
     object Paused : TimerState()
+    object AdShowing : TimerState() // New state for Ad
     object Completed : TimerState()
 }
 
@@ -66,7 +67,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 viewModelScope.launch {
                     userPreferencesRepository.updateOnSessionCompleted(_userPreferences.value.focusDuration)
                 }
-                _timerState.value = TimerState.Completed
+                // Transition to AdShowing instead of Completed
+                _timerState.value = TimerState.AdShowing
             }
         }.start()
     }
@@ -87,7 +89,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 viewModelScope.launch {
                     userPreferencesRepository.updateOnSessionCompleted(_userPreferences.value.focusDuration)
                 }
-                _timerState.value = TimerState.Completed
+                _timerState.value = TimerState.AdShowing
             }
         }.start()
     }
@@ -98,9 +100,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _timerState.value = TimerState.Idle
     }
 
+    // Called when UI observes AdShowing state
     fun showInterstitialAd(activity: Activity) {
         interstitialAdManager.showAd(activity) {
-            // No-op
+            // After ad (or if failed), move to Completed to show Dialog
+            _timerState.value = TimerState.Completed
         }
     }
 

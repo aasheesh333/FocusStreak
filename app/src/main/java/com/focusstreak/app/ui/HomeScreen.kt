@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,7 +38,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -46,9 +48,6 @@ import com.focusstreak.app.navigation.Screen
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import com.focusstreak.app.viewmodel.HomeViewModel
 import com.focusstreak.app.viewmodel.TimerState
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdSize
-import com.google.android.gms.ads.AdView
 
 // --- Colors from Home Design (Dark Theme) ---
 private val HomeBackground = Color(0xFF0F0A1E)
@@ -67,6 +66,15 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
     val userPreferences by homeViewModel.userPreferences.collectAsState()
     val totalTime = userPreferences.focusDuration * 60 * 1000L
     val context = LocalContext.current as Activity
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = HomeBackground.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -93,10 +101,15 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
         }
     }
 
-    if (timerState is TimerState.Completed) {
+    // Ad Logic: Show ad when in AdShowing state
+    if (timerState is TimerState.AdShowing) {
         LaunchedEffect(timerState) {
             homeViewModel.showInterstitialAd(context)
         }
+    }
+
+    // Session Complete Dialog only shows in Completed state (which happens AFTER ad)
+    if (timerState is TimerState.Completed) {
         SessionCompleteDialog(
             onDismiss = { homeViewModel.endTimer() },
             onStartAnotherSession = { homeViewModel.startTimer() },
@@ -337,30 +350,10 @@ fun Footer(timerState: TimerState, viewModel: HomeViewModel) {
                     onClick = { viewModel.startTimer() }
                 )
             }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Ad Space Placeholder
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.White.copy(alpha = 0.05f))
-                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-             AndroidView(
-                modifier = Modifier.wrapContentSize(),
-                factory = { context ->
-                    AdView(context).apply {
-                        setAdSize(AdSize.BANNER)
-                        adUnitId = BuildConfig.ADMOB_BANNER_ID
-                        loadAd(AdRequest.Builder().build())
-                    }
-                }
-            )
+            is TimerState.AdShowing -> {
+                 // Keep visible or show loading
+                 // Minimal changes: Just show empty space or loading
+            }
         }
     }
 }

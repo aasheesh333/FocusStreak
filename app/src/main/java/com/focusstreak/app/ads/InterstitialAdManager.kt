@@ -33,7 +33,7 @@ class InterstitialAdManager(private val context: Context) {
 
     fun showAd(activity: Activity, onAdDismissed: () -> Unit) {
         sessionCount++
-        if (sessionCount % 3 == 0 && interstitialAd != null) {
+        if (interstitialAd != null) {
             interstitialAd?.fullScreenContentCallback = object : com.google.android.gms.ads.FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
                     onAdDismissed()

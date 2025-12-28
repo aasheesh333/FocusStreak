@@ -1,9 +1,11 @@
 package com.focusstreak.app.viewmodel
 
+import android.app.Activity
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.focusstreak.app.FocusStreakApplication
+import com.focusstreak.app.ads.RewardedAdManager
 import com.focusstreak.app.data.UserPreferencesRepository
 import com.focusstreak.app.notification.NotificationScheduler
 import kotlinx.coroutines.flow.first
@@ -13,8 +15,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val userPreferencesRepository: UserPreferencesRepository = (application as FocusStreakApplication).userPreferencesRepository
     private val notificationScheduler = NotificationScheduler(application)
+    private val rewardedAdManager = RewardedAdManager(application)
 
     val userPreferencesFlow = userPreferencesRepository.userPreferencesFlow
+
+    init {
+        rewardedAdManager.loadAd()
+    }
 
     fun resetAllProgress() {
         viewModelScope.launch {
@@ -44,9 +51,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    // Direct update (legacy or internal)
     fun updateTheme(theme: String) {
         viewModelScope.launch {
             userPreferencesRepository.updateTheme(theme)
+        }
+    }
+
+    // Ad-gated update
+    fun showThemeAd(activity: Activity, theme: String) {
+        rewardedAdManager.showAd(activity) {
+             updateTheme(theme)
         }
     }
 

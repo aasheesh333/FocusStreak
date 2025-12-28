@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.Color
 val Primary = Color(0xFF7f13ec)
 val PrimaryDark = Color(0xFF660ec1)
 val BackgroundLight = Color(0xFFf7f6f8)
-val BackgroundDark = Color(0xFF191022)
+val BackgroundDark = Color(0xFF0F0A1E) // Updated to match Home Design
 val AccentFire = Color(0xFFFF5722)
 
 val Purple80 = Color(0xFFD0BCFF)

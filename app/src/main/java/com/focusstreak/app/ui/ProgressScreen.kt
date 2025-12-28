@@ -1,6 +1,14 @@
 package com.focusstreak.app.ui
 
+import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,29 +20,33 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.focusstreak.app.R
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import com.focusstreak.app.viewmodel.ProgressViewModel
+import kotlinx.coroutines.delay
+import java.io.File
+import java.io.FileOutputStream
 
 // --- Colors matching Home Screen Dark Theme ---
 private val ProgressBackground = Color(0xFF0F0A1E)
@@ -54,6 +66,15 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
     val weekDays by progressViewModel.weekDays.collectAsState()
     val context = LocalContext.current
 
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = ProgressBackground.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -64,7 +85,7 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            contentPadding = PaddingValues(bottom = 100.dp) // Space for FAB/Button
+            contentPadding = PaddingValues(bottom = 100.dp)
         ) {
             item { ProgressHeader(navController) }
 
@@ -72,13 +93,7 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
                 StreakSection(
                     currentStreak = userPreferences.currentStreak,
                     onShareClick = {
-                        val sendIntent: Intent = Intent().apply {
-                            action = Intent.ACTION_SEND
-                            putExtra(Intent.EXTRA_TEXT, context.getString(R.string.share_streak_text, userPreferences.currentStreak))
-                            type = "text/plain"
-                        }
-                        val shareIntent = Intent.createChooser(sendIntent, null)
-                        context.startActivity(shareIntent)
+                        shareStreak(context, userPreferences.currentStreak, userPreferences.totalSessions)
                     }
                 )
             }
@@ -96,19 +111,16 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
             item { MilestonesSection() }
         }
 
-        // Start Focus Button (Floating at bottom)
+        // Floating Action Button
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(16.dp)
-                .background(ProgressBackground.copy(alpha = 0.9f)) // Gradient fade?
+                .background(ProgressBackground.copy(alpha = 0.9f))
         ) {
              Button(
-                onClick = {
-                    // Navigate back to home or specifically to timer start if possible
-                    navController.popBackStack()
-                },
+                onClick = { navController.popBackStack() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp),
@@ -184,7 +196,7 @@ fun StreakSection(currentStreak: Int, onShareClick: () -> Unit) {
                 .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
             Text(
-                text = "TOP 5% OF USERS", // Could be string resource
+                text = "TOP 5% OF USERS",
                 color = BadgeGreen,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
@@ -194,33 +206,37 @@ fun StreakSection(currentStreak: Int, onShareClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Streak Count
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            val fireIcon = ImageVector.vectorResource(id = R.drawable.ic_fire)
-            Icon(
-                imageVector = fireIcon,
-                contentDescription = null,
-                tint = FireOrange,
-                modifier = Modifier.size(40.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = stringResource(id = R.string.days, currentStreak),
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextWhite
-            )
+        // Streak Count with Animation
+        Box(contentAlignment = Alignment.Center) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                val fireIcon = ImageVector.vectorResource(id = R.drawable.ic_fire)
+                Icon(
+                    imageVector = fireIcon,
+                    contentDescription = null,
+                    tint = FireOrange,
+                    modifier = Modifier.size(40.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = stringResource(id = R.string.days, currentStreak),
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextWhite
+                )
+            }
+
+            // Celebratory Animations
+            CelebrationIcons()
         }
 
         Text(
-            text = stringResource(id = R.string.day_streak), // Using existing string
+            text = stringResource(id = R.string.day_streak),
             color = TextGrey,
             fontSize = 14.sp
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Share Button
         Button(
             onClick = onShareClick,
             colors = ButtonDefaults.buttonColors(
@@ -241,6 +257,49 @@ fun StreakSection(currentStreak: Int, onShareClick: () -> Unit) {
                 text = stringResource(id = R.string.share_streak),
                 fontWeight = FontWeight.SemiBold
             )
+        }
+    }
+}
+
+@Composable
+fun CelebrationIcons() {
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+        delay(2000)
+        visible = false
+    }
+
+    Box(modifier = Modifier.size(100.dp)) { // Canvas for particles
+        // Particle 1: Fire
+        AnimatedVisibility(
+            visible = visible,
+            enter = slideInVertically(initialOffsetY = { 50 }, animationSpec = tween(1000)) + fadeIn(animationSpec = tween(500)),
+            exit = fadeOut(animationSpec = tween(1000)),
+            modifier = Modifier.align(Alignment.CenterStart).offset(y = (-40).dp)
+        ) {
+            Icon(ImageVector.vectorResource(id = R.drawable.ic_fire), contentDescription = null, tint = FireOrange, modifier = Modifier.size(24.dp))
+        }
+
+        // Particle 2: Sparkle
+        AnimatedVisibility(
+            visible = visible,
+            enter = slideInVertically(initialOffsetY = { 60 }, animationSpec = tween(1200)) + fadeIn(animationSpec = tween(600)),
+            exit = fadeOut(animationSpec = tween(1000)),
+            modifier = Modifier.align(Alignment.TopEnd).offset(x = (-10).dp, y = (-20).dp)
+        ) {
+            Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = Color.Yellow, modifier = Modifier.size(20.dp))
+        }
+
+        // Particle 3: Party
+        AnimatedVisibility(
+            visible = visible,
+            enter = slideInVertically(initialOffsetY = { 40 }, animationSpec = tween(1500)) + fadeIn(animationSpec = tween(700)),
+            exit = fadeOut(animationSpec = tween(1000)),
+            modifier = Modifier.align(Alignment.TopCenter).offset(y = (-60).dp)
+        ) {
+             Text("🎉", fontSize = 24.sp)
         }
     }
 }
@@ -271,7 +330,7 @@ fun ThisWeekSection(weekDays: List<Triple<String, Boolean, Boolean>>) {
 fun DayCircle(day: String, isCompleted: Boolean, isToday: Boolean) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = day.take(1), // M, T, W...
+            text = day.take(1),
             color = TextGrey,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium
@@ -309,22 +368,19 @@ fun StatsGrid(totalFocusMinutes: Int, totalSessions: Int) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Hours Card
         StatCard(
             title = stringResource(id = R.string.hours),
             value = String.format("%.1f", totalFocusMinutes / 60.0),
-            subtitle = "Total focused time", // Needs resource or hardcode
+            subtitle = "Total focused time",
             icon = Icons.Filled.AccessTime,
             iconBg = IconBgPurple,
             iconTint = AccentPurpleLight,
             modifier = Modifier.weight(1f)
         )
-
-        // Sessions Card
         StatCard(
-            title = stringResource(id = R.string.sessions), // "Sessions"
+            title = stringResource(id = R.string.sessions),
             value = totalSessions.toString(),
-            subtitle = "Completed sessions", // Needs resource or hardcode
+            subtitle = "Completed sessions",
             icon = Icons.Filled.CheckCircle,
             iconBg = IconBgTeal,
             iconTint = Color(0xFF26A69A),
@@ -368,7 +424,6 @@ fun StatCard(
                     modifier = Modifier.size(16.dp)
                 )
             }
-
             Column {
                 Text(
                     text = value,
@@ -377,7 +432,7 @@ fun StatCard(
                     color = TextWhite
                 )
                 Text(
-                    text = "$title $subtitle", // e.g. "HOURS Total focused time" -> actually design has "42.5 HOURS" then newline "Total focused time"
+                    text = "$title $subtitle",
                     fontSize = 12.sp,
                     color = TextGrey,
                     lineHeight = 16.sp
@@ -397,29 +452,12 @@ fun MilestonesSection() {
             fontSize = 18.sp,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-
-        // Horizontal list of milestones
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                MilestoneCard(
-                    title = stringResource(id = R.string.seven_day_streak),
-                    isUnlocked = true
-                )
-            }
-            item {
-                MilestoneCard(
-                    title = stringResource(id = R.string.fourteen_day_streak),
-                    isUnlocked = false
-                )
-            }
-             item {
-                MilestoneCard(
-                    title = stringResource(id = R.string.thirty_day_streak),
-                    isUnlocked = false
-                )
-            }
+            item { MilestoneCard(stringResource(id = R.string.seven_day_streak), true) }
+            item { MilestoneCard(stringResource(id = R.string.fourteen_day_streak), false) }
+            item { MilestoneCard(stringResource(id = R.string.thirty_day_streak), false) }
         }
     }
 }
@@ -445,7 +483,6 @@ fun MilestoneCard(title: String, isUnlocked: Boolean) {
                 tint = if (isUnlocked) Color(0xFFFFD700) else Color.Gray,
                 modifier = Modifier.size(24.dp)
             )
-
             Text(
                 text = title,
                 color = if (isUnlocked) TextWhite else TextGrey,
@@ -456,10 +493,62 @@ fun MilestoneCard(title: String, isUnlocked: Boolean) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun ProgressScreenPreview() {
-    FocusStreakTheme {
-        ProgressScreen(rememberNavController())
+fun shareStreak(context: Context, streak: Int, sessions: Int) {
+    val width = 1080
+    val height = 1080
+    val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+
+    // Background
+    canvas.drawColor(android.graphics.Color.parseColor("#0F0A1E"))
+
+    // Text Paint
+    val paint = android.graphics.Paint().apply {
+        color = android.graphics.Color.WHITE
+        textAlign = android.graphics.Paint.Align.CENTER
+        isAntiAlias = true
+        typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+    }
+
+    // Branding
+    paint.textSize = 60f
+    canvas.drawText("FocusStreak 💜", width / 2f, 150f, paint)
+
+    // Streak Number
+    paint.textSize = 400f
+    canvas.drawText(streak.toString(), width / 2f, height / 2f + 50f, paint)
+
+    // Label
+    paint.textSize = 60f
+    paint.color = android.graphics.Color.parseColor("#888888")
+    canvas.drawText("DAY STREAK", width / 2f, height / 2f + 200f, paint)
+
+    // Sessions
+    paint.textSize = 50f
+    paint.color = android.graphics.Color.WHITE
+    canvas.drawText("$sessions Sessions Completed", width / 2f, height / 2f + 300f, paint)
+
+    // Motivational Quote
+    paint.textSize = 40f
+    paint.color = android.graphics.Color.WHITE
+    canvas.drawText("Staying focused. One day at a time.", width / 2f, height - 150f, paint)
+
+    try {
+        val file = File(context.cacheDir, "streak_share.png")
+        val stream = FileOutputStream(file)
+        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+        stream.close()
+
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_TEXT, "I’m building my focus streak with FocusStreak 💜")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Share Streak"))
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
