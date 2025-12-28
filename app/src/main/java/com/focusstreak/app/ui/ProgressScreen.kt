@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.border
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,7 +46,7 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Header(navController)
+            ProgressHeader(navController)
             Streak(userPreferences.currentStreak) {
                 val sendIntent: Intent = Intent().apply {
                     action = Intent.ACTION_SEND
@@ -63,7 +64,7 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
 }
 
 @Composable
-fun Header(navController: NavController) {
+private fun ProgressHeader(navController: NavController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -72,7 +73,7 @@ fun Header(navController: NavController) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = { navController.popBackStack() }) {
-            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
+            Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onBackground)
         }
         Text(text = stringResource(id = R.string.my_progress), color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.width(48.dp))
@@ -98,7 +99,7 @@ fun Streak(currentStreak: Int, onShareClick: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onShareClick) {
-            Icon(imageVector = Icons.Default.Share, contentDescription = stringResource(id = R.string.share_streak))
+            Icon(imageVector = Icons.Filled.Share, contentDescription = stringResource(id = R.string.share_streak))
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = stringResource(id = R.string.share_streak))
         }
@@ -141,7 +142,7 @@ fun Day(day: String, isCompleted: Boolean, isToday: Boolean = false) {
             contentAlignment = Alignment.Center
         ) {
             if (isCompleted) {
-                Icon(imageVector = Icons.Default.Check, contentDescription = "Completed", tint = MaterialTheme.colorScheme.onPrimary)
+                Icon(imageVector = Icons.Filled.Check, contentDescription = "Completed", tint = MaterialTheme.colorScheme.onPrimary)
             }
         }
     }
@@ -155,8 +156,8 @@ fun Stats(totalFocusMinutes: Int, totalSessions: Int) {
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceAround
     ) {
-        StatCard(stringResource(id = R.string.hours), (totalFocusMinutes / 60.0).toString(), Icons.Default.Timer)
-        StatCard(stringResource(id = R.string.sessions), totalSessions.toString(), Icons.Default.Psychology)
+        StatCard(stringResource(id = R.string.hours), (totalFocusMinutes / 60.0).toString(), Icons.Filled.Timer)
+        StatCard(stringResource(id = R.string.sessions), totalSessions.toString(), Icons.Filled.Psychology)
     }
 }
 
@@ -218,7 +219,7 @@ fun MilestoneCard(text: String, isUnlocked: Boolean) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = if (isUnlocked) ImageVector.vectorResource(id = R.drawable.ic_fire) else Icons.Default.Lock,
+                imageVector = if (isUnlocked) ImageVector.vectorResource(id = R.drawable.ic_fire) else Icons.Filled.Lock,
                 contentDescription = text,
                 tint = MaterialTheme.colorScheme.onPrimary
             )

@@ -8,10 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -66,7 +63,7 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Header(navController, userPreferences.currentStreak)
+            HomeHeader(navController, userPreferences.currentStreak)
             Timer(timeInMillis, totalTime)
             Footer(timerState, homeViewModel)
         }
@@ -86,7 +83,14 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
 }
 
 @Composable
-fun Header(navController: NavController, currentStreak: Int) {
+fun HomeHeader(navController: NavController, currentStreak: Int) {
+    val focusStreakText = stringResource(id = R.string.focus_streak)
+    val settingsDesc = stringResource(id = R.string.settings)
+    val dayStreakDesc = stringResource(id = R.string.day_streak)
+    val daysText = stringResource(id = R.string.days, currentStreak)
+    val momentumText = stringResource(id = R.string.keep_the_momentum)
+    val fireIcon = ImageVector.vectorResource(id = R.drawable.ic_fire)
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(top = 32.dp)
@@ -98,7 +102,7 @@ fun Header(navController: NavController, currentStreak: Int) {
         ) {
             Spacer(modifier = Modifier.width(40.dp))
             Text(
-                text = stringResource(id = R.string.focus_streak),
+                text = focusStreakText,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
@@ -106,8 +110,8 @@ fun Header(navController: NavController, currentStreak: Int) {
             )
             IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
                 Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = stringResource(id = R.string.settings),
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = settingsDesc,
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
                 )
             }
@@ -118,14 +122,14 @@ fun Header(navController: NavController, currentStreak: Int) {
             modifier = Modifier.clickable { navController.navigate(Screen.Progress.route) }
         ) {
             Icon(
-                imageVector = ImageVector.vectorResource(id = R.drawable.ic_fire),
-                contentDescription = stringResource(id = R.string.day_streak),
+                imageVector = fireIcon,
+                contentDescription = dayStreakDesc,
                 tint = AccentFire,
                 modifier = Modifier.size(48.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = stringResource(id = R.string.days, currentStreak),
+                text = daysText,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold
@@ -133,7 +137,7 @@ fun Header(navController: NavController, currentStreak: Int) {
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = stringResource(id = R.string.keep_the_momentum),
+            text = momentumText,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
             textAlign = TextAlign.Center,
             modifier = Modifier.width(240.dp)
@@ -146,6 +150,8 @@ fun Timer(timeInMillis: Long, totalTime: Long) {
     val minutes = (timeInMillis / 1000 / 60).toString().padStart(2, '0')
     val seconds = (timeInMillis / 1000 % 60).toString().padStart(2, '0')
     val progress = if (totalTime > 0) (totalTime - timeInMillis) / totalTime.toFloat() else 0f
+    val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+    val progressColor = MaterialTheme.colorScheme.primary
 
     Box(
         contentAlignment = Alignment.Center,
@@ -157,21 +163,21 @@ fun Timer(timeInMillis: Long, totalTime: Long) {
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawArc(
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                color = trackColor,
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
                 style = Stroke(width = 8f)
             )
             drawArc(
-                color = MaterialTheme.colorScheme.primary,
+                color = progressColor,
                 startAngle = -90f,
                 sweepAngle = 360 * progress,
                 useCenter = false,
                 style = Stroke(width = 12f, cap = StrokeCap.Round)
             )
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        androidx.compose.foundation.layout.Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = stringResource(id = R.string.time_format, minutes, seconds),
                 color = MaterialTheme.colorScheme.onSurface,
@@ -197,20 +203,20 @@ fun Footer(timerState: TimerState, viewModel: HomeViewModel) {
     ) {
         when (timerState) {
             is TimerState.Idle -> {
-                PrimaryButton(stringResource(id = R.string.start_focus), Icons.Default.PlayArrow) { viewModel.startTimer() }
+                PrimaryButton(stringResource(id = R.string.start_focus), Icons.Filled.PlayArrow) { viewModel.startTimer() }
             }
             is TimerState.Running -> {
-                PrimaryButton(stringResource(id = R.string.pause), Icons.Default.Pause) { viewModel.pauseTimer() }
+                PrimaryButton(stringResource(id = R.string.pause), Icons.Filled.Pause) { viewModel.pauseTimer() }
             }
             is TimerState.Paused -> {
                 Row {
-                    PrimaryButton(stringResource(id = R.string.resume), Icons.Default.PlayArrow) { viewModel.resumeTimer() }
+                    PrimaryButton(stringResource(id = R.string.resume), Icons.Filled.PlayArrow) { viewModel.resumeTimer() }
                     Spacer(modifier = Modifier.width(16.dp))
-                    PrimaryButton(stringResource(id = R.string.end), Icons.Default.Stop, color = Color.Gray) { viewModel.endTimer() }
+                    PrimaryButton(stringResource(id = R.string.end), Icons.Filled.Stop, color = Color.Gray) { viewModel.endTimer() }
                 }
             }
             is TimerState.Completed -> {
-                PrimaryButton(stringResource(id = R.string.start_another_session), Icons.Default.PlayArrow) { viewModel.startTimer() }
+                PrimaryButton(stringResource(id = R.string.start_another_session), Icons.Filled.PlayArrow) { viewModel.startTimer() }
             }
         }
         Spacer(modifier = Modifier.height(32.dp))

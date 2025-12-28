@@ -45,7 +45,7 @@ fun SettingsScreen(navController: NavController, settingsViewModel: SettingsView
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item { Header(navController) }
+            item { SettingsHeader(navController) }
             item { FocusSection(settingsViewModel) }
             item { NotificationsSection(settingsViewModel) }
             item { AppearanceSection(settingsViewModel) }
@@ -83,7 +83,7 @@ fun SettingsScreen(navController: NavController, settingsViewModel: SettingsView
 }
 
 @Composable
-fun Header(navController: NavController) {
+private fun SettingsHeader(navController: NavController) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -115,7 +115,7 @@ fun FocusSection(viewModel: SettingsViewModel) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            SettingItem(stringResource(id = R.string.focus_duration), Icons.Default.Timer)
+            SettingItem(stringResource(id = R.string.focus_duration), Icons.Filled.Timer)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -127,7 +127,7 @@ fun FocusSection(viewModel: SettingsViewModel) {
                 DurationButton(45, selectedDuration) { viewModel.updateFocusDuration(it) }
                 DurationButton(-1, selectedDuration) { showCustomDurationDialog = true }
             }
-            SettingItem(stringResource(id = R.string.auto_start_break), Icons.Default.Autorenew, true, userPreferences?.autoStartBreak ?: false) {
+            SettingItem(stringResource(id = R.string.auto_start_break), Icons.Filled.Autorenew, true, userPreferences?.autoStartBreak ?: false) {
                 viewModel.updateAutoStartBreak(it)
             }
         }
@@ -157,7 +157,7 @@ fun DurationButton(duration: Int, selectedDuration: Int, onClick: (Int) -> Unit)
         if (duration > 0) {
             Text(text = stringResource(id = R.string.duration_format, duration))
         } else {
-            Icon(imageVector = Icons.Default.Edit, contentDescription = stringResource(id = R.string.custom))
+            Icon(imageVector = Icons.Filled.Edit, contentDescription = stringResource(id = R.string.custom))
         }
     }
 }
@@ -225,7 +225,7 @@ fun NotificationsSection(viewModel: SettingsViewModel) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            SettingItem(stringResource(id = R.string.daily_reminder), Icons.Default.Notifications, hasSwitch = true, isChecked = userPreferences?.dailyReminderEnabled == true && hasNotificationPermission) {
+            SettingItem(stringResource(id = R.string.daily_reminder), Icons.Filled.Notifications, hasSwitch = true, isChecked = userPreferences?.dailyReminderEnabled == true && hasNotificationPermission) {
                 if (hasNotificationPermission) {
                     viewModel.updateDailyReminderEnabled(it)
                     if (it) {
@@ -266,7 +266,7 @@ fun NotificationsSection(viewModel: SettingsViewModel) {
                     }
                 }
             }
-            SettingItem(stringResource(id = R.string.sound_effects), Icons.Default.VolumeUp, true, userPreferences?.soundEffectsEnabled ?: true) {
+            SettingItem(stringResource(id = R.string.sound_effects), Icons.Filled.VolumeUp, true, userPreferences?.soundEffectsEnabled ?: true) {
                 // TODO: Implement sound effects
                 viewModel.updateSoundEffectsEnabled(it)
             }
@@ -289,7 +289,7 @@ fun AppearanceSection(viewModel: SettingsViewModel) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            SettingItem(stringResource(id = R.string.theme), Icons.Default.Palette)
+            SettingItem(stringResource(id = R.string.theme), Icons.Filled.Palette)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -328,19 +328,19 @@ fun AboutSection() {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            SettingItem(stringResource(id = R.string.rate_us), Icons.Default.Star) {
+            SettingItem(stringResource(id = R.string.rate_us), Icons.Filled.Star) {
                 // TODO: Implement rate us
             }
             val context = LocalContext.current
-            SettingItem(stringResource(id = R.string.privacy_policy), Icons.Default.Lock) {
+            SettingItem(stringResource(id = R.string.privacy_policy), Icons.Filled.Lock) {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/privacy"))
                 context.startActivity(intent)
             }
-            SettingItem("Terms & Conditions", Icons.Default.Description) {
+            SettingItem("Terms & Conditions", Icons.Filled.Description) {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/terms"))
                 context.startActivity(intent)
             }
-            SettingItem("Ads Policy Disclosure", Icons.Default.Info) {
+            SettingItem("Ads Policy Disclosure", Icons.Filled.Info) {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/ads"))
                 context.startActivity(intent)
             }
@@ -373,7 +373,7 @@ fun ResetSection(onResetClick: () -> Unit) {
                 .fillMaxWidth()
                 .padding(vertical = 16.dp)
         ) {
-            Icon(imageVector = Icons.Default.Delete, contentDescription = stringResource(id = R.string.reset_all_progress))
+            Icon(imageVector = Icons.Filled.Delete, contentDescription = stringResource(id = R.string.reset_all_progress))
             Spacer(modifier = Modifier.width(8.dp))
             Text(text = stringResource(id = R.string.reset_all_progress))
         }

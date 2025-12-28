@@ -3,10 +3,10 @@ package com.focusstreak.app.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -42,7 +42,7 @@ fun SessionCompleteDialog(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Icon(
-                    imageVector = Icons.Default.CardGiftcard,
+                    imageVector = Icons.Filled.CardGiftcard,
                     contentDescription = stringResource(id = R.string.session_complete),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(128.dp)
