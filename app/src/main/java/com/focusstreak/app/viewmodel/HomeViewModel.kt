@@ -37,10 +37,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _timeInMillis = MutableStateFlow(25 * 60 * 1000L)
     val timeInMillis: StateFlow<Long> = _timeInMillis
 
-    private val _userPreferences = MutableStateFlow(UserPreferences(emptySet(), 0, 0, 0, 25, "System", 9, 0, false, false, true))
+    private val _userPreferences = MutableStateFlow(UserPreferences(emptySet(), 0, 0, 0, 25, "System", 9, 0, false, false, true, 0))
     val userPreferences: StateFlow<UserPreferences> = _userPreferences
 
     private var countDownTimer: CountDownTimer? = null
+    private var mediaPlayer: android.media.MediaPlayer? = null
 
     init {
         viewModelScope.launch {
@@ -55,6 +56,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         rewardedAdManager.loadAd()
     }
 
+    private fun playCompletionSound() {
+        if (_userPreferences.value.soundEffectsEnabled) {
+            try {
+                if (mediaPlayer == null) {
+                    mediaPlayer = android.media.MediaPlayer.create(getApplication(), R.raw.success)
+                }
+                mediaPlayer?.start()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     fun startTimer() {
         _timeInMillis.value = _userPreferences.value.focusDuration * 60 * 1000L
         _timerState.value = TimerState.Running
@@ -67,10 +81,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 viewModelScope.launch {
                     userPreferencesRepository.updateOnSessionCompleted(_userPreferences.value.focusDuration)
                 }
-                // Transition to AdShowing instead of Completed
-                _timerState.value = TimerState.AdShowing
+                onTimerFinishSequence()
             }
         }.start()
+    }
+
+    private fun onTimerFinishSequence() {
+        playCompletionSound()
+        // Check Launch Count for Ad Logic
+        // "First time user ... tab na dikhe" -> Only show if launch count > 1
+        if (_userPreferences.value.appLaunchCount > 1) {
+            _timerState.value = TimerState.AdShowing
+        } else {
+            // Skip Ad, go directly to Completed
+            _timerState.value = TimerState.Completed
+        }
     }
 
     fun pauseTimer() {
@@ -89,13 +114,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 viewModelScope.launch {
                     userPreferencesRepository.updateOnSessionCompleted(_userPreferences.value.focusDuration)
                 }
-                _timerState.value = TimerState.AdShowing
+                onTimerFinishSequence()
             }
         }.start()
     }
 
     fun endTimer() {
         countDownTimer?.cancel()
+        if (mediaPlayer?.isPlaying == true) {
+             mediaPlayer?.stop()
+             mediaPlayer?.prepare() // Reset for next time
+        }
         _timeInMillis.value = _userPreferences.value.focusDuration * 60 * 1000L
         _timerState.value = TimerState.Idle
     }
@@ -113,5 +142,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             _timeInMillis.value += 5 * 60 * 1000L
             Toast.makeText(getApplication(), getApplication<Application>().getString(R.string.bonus_minutes_added), Toast.LENGTH_SHORT).show()
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        countDownTimer?.cancel()
+        mediaPlayer?.release()
+        mediaPlayer = null
     }
 }

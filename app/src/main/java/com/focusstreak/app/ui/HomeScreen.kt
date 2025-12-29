@@ -48,6 +48,8 @@ import com.focusstreak.app.navigation.Screen
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import com.focusstreak.app.viewmodel.HomeViewModel
 import com.focusstreak.app.viewmodel.TimerState
+import android.view.WindowManager
+import androidx.compose.runtime.DisposableEffect
 
 // --- Colors from Home Design (Dark Theme) ---
 private val HomeBackground = Color(0xFF0F0A1E)
@@ -73,6 +75,19 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
             val window = (view.context as Activity).window
             window.statusBarColor = HomeBackground.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+        }
+    }
+
+    // Keep screen on when timer is running
+    DisposableEffect(timerState) {
+        val window = context.window
+        if (timerState is TimerState.Running) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
 

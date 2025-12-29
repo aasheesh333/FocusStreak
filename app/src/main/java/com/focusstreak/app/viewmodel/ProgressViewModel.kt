@@ -15,7 +15,7 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
 
     private val userPreferencesRepository: UserPreferencesRepository = (application as FocusStreakApplication).userPreferencesRepository
 
-    private val _userPreferences = MutableStateFlow(UserPreferences(emptySet(), 0, 0, 0, 25, "System", 9, 0, false, false, true))
+    private val _userPreferences = MutableStateFlow(UserPreferences(emptySet(), 0, 0, 0, 25, "System", 9, 0, false, false, true, 0))
     val userPreferences: StateFlow<UserPreferences> = _userPreferences
 
     private val _weekDays = MutableStateFlow<List<Triple<String, Boolean, Boolean>>>(emptyList())

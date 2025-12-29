@@ -24,6 +24,7 @@ class UserPreferencesRepository(private val context: Context) {
         val AUTO_START_BREAK = booleanPreferencesKey("auto_start_break")
         val DAILY_REMINDER_ENABLED = booleanPreferencesKey("daily_reminder_enabled")
         val SOUND_EFFECTS_ENABLED = booleanPreferencesKey("sound_effects_enabled")
+        val APP_LAUNCH_COUNT = intPreferencesKey("app_launch_count")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data
@@ -38,6 +39,7 @@ class UserPreferencesRepository(private val context: Context) {
             val autoStartBreak = preferences[PreferencesKeys.AUTO_START_BREAK] ?: false
             val dailyReminderEnabled = preferences[PreferencesKeys.DAILY_REMINDER_ENABLED] ?: false
             val soundEffectsEnabled = preferences[PreferencesKeys.SOUND_EFFECTS_ENABLED] ?: true
+            val appLaunchCount = preferences[PreferencesKeys.APP_LAUNCH_COUNT] ?: 0
             UserPreferences(
                 completedDates,
                 calculateStreak(completedDates),
@@ -49,7 +51,8 @@ class UserPreferencesRepository(private val context: Context) {
                 reminderMinute,
                 autoStartBreak,
                 dailyReminderEnabled,
-                soundEffectsEnabled
+                soundEffectsEnabled,
+                appLaunchCount
             )
         }
 
@@ -143,6 +146,13 @@ class UserPreferencesRepository(private val context: Context) {
         }
     }
 
+    suspend fun incrementAppLaunchCount() {
+        context.dataStore.edit { preferences ->
+            val current = preferences[PreferencesKeys.APP_LAUNCH_COUNT] ?: 0
+            preferences[PreferencesKeys.APP_LAUNCH_COUNT] = current + 1
+        }
+    }
+
     private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
         return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
                 cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
@@ -166,5 +176,6 @@ data class UserPreferences(
     val reminderMinute: Int,
     val autoStartBreak: Boolean,
     val dailyReminderEnabled: Boolean,
-    val soundEffectsEnabled: Boolean
+    val soundEffectsEnabled: Boolean,
+    val appLaunchCount: Int
 )
