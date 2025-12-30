@@ -36,7 +36,7 @@ class ReminderWorker(appContext: Context, workerParams: WorkerParameters) :
         val notification = NotificationCompat.Builder(applicationContext, "focus_streak_reminder")
             .setContentTitle(applicationContext.getString(R.string.app_name))
             .setContentText(applicationContext.getString(R.string.keep_the_momentum))
-            .setSmallIcon(R.drawable.ic_fire)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()

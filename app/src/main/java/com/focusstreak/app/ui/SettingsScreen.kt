@@ -651,7 +651,7 @@ fun AboutSectionContent() {
     }
     Divider(color = Color(0xFFF0F0F0), thickness = 1.dp)
     AboutItemRow(title = stringResource(id = R.string.privacy_policy), icon = Icons.Filled.ArrowForward) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/privacy"))
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://dhanuk.page.gd/FocusStreak/Privacy-Policy.html"))
         context.startActivity(intent)
     }
     Divider(color = Color(0xFFF0F0F0), thickness = 1.dp)

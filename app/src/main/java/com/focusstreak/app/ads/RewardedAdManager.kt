@@ -30,7 +30,7 @@ class RewardedAdManager(private val context: Context) {
         )
     }
 
-    fun showAd(activity: Activity, onRewardEarned: () -> Unit) {
+    fun showAd(activity: Activity, onAdNotReady: () -> Unit = {}, onRewardEarned: () -> Unit) {
         if (rewardedAd != null) {
             rewardedAd?.fullScreenContentCallback = object : com.google.android.gms.ads.FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
@@ -41,6 +41,8 @@ class RewardedAdManager(private val context: Context) {
             rewardedAd?.show(activity) {
                 onRewardEarned()
             }
+        } else {
+            onAdNotReady()
         }
     }
 }

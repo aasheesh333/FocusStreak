@@ -60,9 +60,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     // Ad-gated update
     fun showThemeAd(activity: Activity, theme: String) {
-        rewardedAdManager.showAd(activity) {
-             updateTheme(theme)
-        }
+        rewardedAdManager.showAd(activity,
+            onAdNotReady = {
+                rewardedAdManager.loadAd()
+                android.widget.Toast.makeText(activity, "Loading ad, please wait...", android.widget.Toast.LENGTH_SHORT).show()
+            },
+            onRewardEarned = {
+                updateTheme(theme)
+            }
+        )
     }
 
     fun updateAutoStartBreak(enabled: Boolean) {
