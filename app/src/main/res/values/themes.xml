@@ -6,5 +6,11 @@
         <item name="android:windowLightStatusBar">@bool/use_light_status</item>
     </style>
 
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
+        <item name="postSplashScreenTheme">@style/Theme.FocusStreak</item>
+    </style>
+
     <bool name="use_light_status">false</bool>
 </resources>
