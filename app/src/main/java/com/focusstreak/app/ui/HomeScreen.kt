@@ -41,7 +41,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.focusstreak.app.R
-import com.focusstreak.app.ads.BannerAd
 import com.focusstreak.app.navigation.Screen
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import com.focusstreak.app.util.findActivity
@@ -50,6 +49,7 @@ import com.focusstreak.app.viewmodel.TimerState
 import android.view.WindowManager
 import android.content.Context
 import android.content.Intent
+import kotlinx.coroutines.launch
 
 // --- Colors from Home Design (Dark Theme) ---
 private val HomeBackground = Color(0xFF0F0A1E)
@@ -102,10 +102,13 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
                 navController = navController,
                 currentStreak = userPreferences.currentStreak,
                 onShareClick = {
-                    shareStreakText(
-                        context = context,
-                        streak = userPreferences.currentStreak
-                    )
+                    activity?.let { act ->
+                        shareHomeScreenshot(
+                            activity = act,
+                            context = context,
+                            streak = userPreferences.currentStreak
+                        )
+                    }
                 }
             )
 
@@ -117,13 +120,6 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
             }
 
             Footer(timerState, homeViewModel)
-
-            // Banner ad pinned below the Footer. We intentionally
-            // only show it when the timer is Idle so the user isn't
-            // distracted by ads while focusing.
-            if (timerState is TimerState.Idle) {
-                BannerAd(modifier = Modifier.padding(top = 8.dp))
-            }
         }
     }
 
@@ -460,26 +456,87 @@ fun HomeScreenPreview() {
 }
 
 /**
- * Quick text-only share of the current streak count. Lightweight
- * counterpart of the PNG-card share on the Progress screen. Falls
- * back to a no-op (with a logcat warning) if no chooser activity
- * is available on the device.
+ * Shares a screenshot of the home screen + a text caption.
+ *
+ * Captures the live activity window (real pixels), writes a PNG to
+ * cacheDir/shared/home_share.png (matches the FileProvider scope in
+ * res/xml/file_paths.xml), then opens a system chooser with both
+ * EXTRA_STREAM (the image) and EXTRA_TEXT (the caption). Most modern
+ * share targets — WhatsApp, X, Instagram, Gmail — accept this dual
+ * payload and pick the bits they need.
+ *
+ * Bitmap creation and PNG encoding are offloaded to Dispatchers.IO so
+ * we never ANR the main thread. startActivity is then called back on
+ * the main thread.
  */
-fun shareStreakText(context: Context, streak: Int) {
-    try {
-        val sendIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(
-                Intent.EXTRA_TEXT,
-                context.getString(R.string.share_streak_text, streak)
+fun shareHomeScreenshot(activity: android.app.Activity, context: Context, streak: Int) {
+    val rootView = activity.window?.decorView
+    if (rootView == null) {
+        android.util.Log.w("HomeScreen", "shareHomeScreenshot: decorView is null")
+        return
+    }
+
+    kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        val uri = try {
+            // Measure the view tree if not yet measured
+            if (rootView.width == 0 || rootView.height == 0) {
+                rootView.measure(
+                    android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
+                    android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED)
+                )
+                rootView.layout(0, 0, rootView.measuredWidth, rootView.measuredHeight)
+            }
+
+            val bitmap = android.graphics.Bitmap.createBitmap(
+                rootView.width,
+                rootView.height,
+                android.graphics.Bitmap.Config.ARGB_8888
             )
+            val canvas = android.graphics.Canvas(bitmap)
+            rootView.draw(canvas)
+
+            val sharedDir = java.io.File(context.cacheDir, "shared")
+            if (!sharedDir.exists()) sharedDir.mkdirs()
+            val file = java.io.File(sharedDir, "home_share.png")
+            java.io.FileOutputStream(file).use { out ->
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+            }
+            bitmap.recycle()
+
+            androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("HomeScreen", "Failed to capture/save home screenshot", e)
+            null
         }
-        context.startActivity(
-            Intent.createChooser(sendIntent, context.getString(R.string.share_chooser_title))
-        )
-    } catch (e: android.content.ActivityNotFoundException) {
-        android.util.Log.w("HomeScreen", "No activity available to share streak", e)
-    } catch (e: Exception) {
-        android.util.Log.e("HomeScreen", "Failed to share streak", e)
+
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    context.getString(R.string.share_streak_text, streak)
+                )
+                if (uri != null) {
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            }
+            try {
+                context.startActivity(
+                    Intent.createChooser(
+                        sendIntent,
+                        context.getString(R.string.share_chooser_title)
+                    )
+                )
+            } catch (e: android.content.ActivityNotFoundException) {
+                android.util.Log.w("HomeScreen", "No activity available to share streak", e)
+            } catch (e: Exception) {
+                android.util.Log.e("HomeScreen", "Failed to launch share chooser", e)
+            }
+        }
     }
 }
