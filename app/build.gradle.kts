@@ -146,7 +146,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-ads:22.6.0")
     implementation("com.google.android.ump:user-messaging-platform:2.2.0")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
-    implementation("androidx.core:core-splashscreen:1.0.1")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("app.cash.turbine:turbine:1.0.0")

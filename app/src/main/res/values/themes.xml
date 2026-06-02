@@ -1,15 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!--
+      Main app theme. Inherits the legacy framework Material Light
+      NoActionBar so we don't drag in the AppCompat / Material
+      Components dependency tree (we use Material 3 via Compose, not
+      XML themes). statusBarColor is transparent so the Compose
+      background extends edge-to-edge.
+
+      The android:windowSplashScreenBackground / windowSplashScreenAnimatedIcon
+      attributes are read by the Android 12+ native splash screen
+      (auto-applied for targetSdk >= 31). We don't need
+      androidx.core:core-splashscreen for that.
+    -->
     <style name="Theme.FocusStreak" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">@bool/use_light_status</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
     </style>
 
-    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
-        <item name="postSplashScreenTheme">@style/Theme.FocusStreak</item>
+    <!--
+      Activity startup theme. For pre-Android 12 devices we need a
+      windowBackground that matches the splash color so the brief
+      moment between activity launch and Compose first frame is
+      blank-coloured (not white-flash). On Android 12+ the platform
+      already shows the splash from windowSplashScreenBackground on
+      Theme.FocusStreak, so this theme is just a thin wrapper.
+    -->
+    <style name="Theme.App.Starting" parent="Theme.FocusStreak">
+        <item name="android:windowBackground">@color/splash_background</item>
     </style>
 
     <bool name="use_light_status">false</bool>

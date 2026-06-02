@@ -98,11 +98,16 @@ class InterstitialAdManager(private val context: Context) {
             }
             ad.show(activity)
         } else {
+            // Ad isn't ready. Same retry-on-demand pattern as
+            // RewardedAdManager: kick off a fresh load so the next
+            // session-end has an ad ready, and proceed with the caller's
+            // onAdDismissed (which is the no-ad fallback path).
             android.util.Log.w(
                 "InterstitialAdManager",
                 "showAd() called but no ad loaded yet " +
-                    "(testMode=$useTestAdUnit). Falling through to onAdDismissed."
+                    "(testMode=$useTestAdUnit). Kicking off retry load."
             )
+            loadAd()
             onAdDismissed()
         }
     }

@@ -88,11 +88,18 @@ class RewardedAdManager(private val context: Context) {
                 onRewardEarned()
             }
         } else {
+            // Ad isn't ready. This happens when the user taps "Bonus
+            // Time" before the first load has completed (e.g. user
+            // finished their session in <2s after launch), or after a
+            // previous load failed with NO_FILL. We kick off a fresh
+            // load here so the next tap has a chance, and tell the
+            // caller to ask the user to try again shortly.
             android.util.Log.w(
                 "RewardedAdManager",
                 "showAd() called but no ad loaded yet " +
-                    "(testMode=$useTestAdUnit). Invoking onAdNotReady."
+                    "(testMode=$useTestAdUnit). Kicking off retry load."
             )
+            loadAd()
             onAdNotReady()
         }
     }

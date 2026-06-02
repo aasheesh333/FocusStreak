@@ -11,7 +11,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.focusstreak.app.ads.ConsentManager
 import com.focusstreak.app.data.UserPreferences
@@ -23,7 +22,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        installSplashScreen()
+        // Note: we previously used androidx.core:core-splashscreen here,
+        // but its postSplashScreenTheme transition was racing with
+        // setContent and throwing "Window couldn't find content container
+        // view" on some devices. The Android 12+ native splash screen
+        // (auto-applied for targetSdk >= 31 via windowSplashScreenBackground
+        // in the activity theme) is sufficient and race-free. Pre-Android
+        // 12 devices get a brief blank window of the splash color.
 
         // GDPR / EEA consent must be collected before any ad request.
         // The manager calls onComplete() exactly once, whether or not
