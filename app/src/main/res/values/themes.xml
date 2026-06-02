@@ -8,16 +8,14 @@
       XML themes). statusBarColor is transparent so the Compose
       background extends edge-to-edge.
 
-      The android:windowSplashScreenBackground / windowSplashScreenAnimatedIcon
-      attributes are read by the Android 12+ native splash screen
-      (auto-applied for targetSdk >= 31). We don't need
+      On API 31+ (Android 12+), res/values-v31/themes.xml adds the
+      android:windowSplashScreenBackground / windowSplashScreenAnimatedIcon
+      attributes for the native splash. We don't need
       androidx.core:core-splashscreen for that.
     -->
     <style name="Theme.FocusStreak" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">@bool/use_light_status</item>
-        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
     </style>
 
     <!--

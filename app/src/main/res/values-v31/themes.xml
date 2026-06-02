@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  API 31+ (Android 12+) splash screen attributes.
+
+  On API 31 and above, the platform reads
+  android:windowSplashScreenBackground and android:windowSplashScreenAnimatedIcon
+  from the activity theme to show the native splash. On lower API levels the
+  base themes.xml is used (with a windowBackground=splash_color to fill the
+  brief blank window between activity launch and Compose first frame).
+-->
+<resources>
+    <style name="Theme.FocusStreak" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">@bool/use_light_status</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
+    </style>
+</resources>
