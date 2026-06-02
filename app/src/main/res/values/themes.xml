@@ -8,25 +8,22 @@
       XML themes). statusBarColor is transparent so the Compose
       background extends edge-to-edge.
 
-      On API 31+ (Android 12+), res/values-v31/themes.xml adds the
-      android:windowSplashScreenBackground / windowSplashScreenAnimatedIcon
-      attributes for the native splash. We don't need
-      androidx.core:core-splashscreen for that.
+      windowBackground is the splash color so the brief moment between
+      activity launch and Compose first frame is blank-coloured, not
+      white-flash. On API 31+ the platform replaces this with the
+      native splash from android:windowSplashScreenBackground (see
+      res/values-v31/themes.xml).
+
+      We deliberately use this theme on the launcher activity (no
+      separate Theme.App.Starting). A separate "starting" theme was
+      breaking android.R.id.content on some OEM builds once we
+      dropped androidx.core:core-splashscreen, producing a NPE in
+      ComponentActivity.setContent at
+      findViewById<ViewGroup>(android.R.id.content).getChildAt(0).
     -->
     <style name="Theme.FocusStreak" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">@bool/use_light_status</item>
-    </style>
-
-    <!--
-      Activity startup theme. For pre-Android 12 devices we need a
-      windowBackground that matches the splash color so the brief
-      moment between activity launch and Compose first frame is
-      blank-coloured (not white-flash). On Android 12+ the platform
-      already shows the splash from windowSplashScreenBackground on
-      Theme.FocusStreak, so this theme is just a thin wrapper.
-    -->
-    <style name="Theme.App.Starting" parent="Theme.FocusStreak">
         <item name="android:windowBackground">@color/splash_background</item>
     </style>
 
