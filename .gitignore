@@ -84,8 +84,6 @@ app/fabric.properties
 /app/src/main/res/raw/
 .sonar/
 sonarqube-project.properties
-/app/src/androidTest
-/app/src/test
 .gradletasknamecache
 .profile
 vcs.xml

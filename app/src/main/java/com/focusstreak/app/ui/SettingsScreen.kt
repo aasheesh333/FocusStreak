@@ -1,11 +1,9 @@
 package com.focusstreak.app.ui
 
-import android.app.Activity
 import android.app.TimePickerDialog
-import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -21,6 +19,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,7 +39,10 @@ import androidx.navigation.compose.rememberNavController
 import com.focusstreak.app.BuildConfig
 import com.focusstreak.app.R
 import com.focusstreak.app.ui.theme.FocusStreakTheme
+import com.focusstreak.app.util.findActivity
+import com.focusstreak.app.viewmodel.SettingsUiEvent
 import com.focusstreak.app.viewmodel.SettingsViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 // --- Colors from Design ---
 private val ScreenBackground = Color(0xFFF8F9FA)
@@ -62,15 +64,22 @@ private val IconTintBlue = Color(0xFF2196F3)
 private val ToggleActiveTrack = Color(0xFF6750A4)
 private val ToggleInactiveTrack = Color(0xFFE0E0E0)
 
-fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
-}
-
 @Composable
 fun SettingsScreen(navController: NavController, settingsViewModel: SettingsViewModel = viewModel()) {
-    var showResetDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val loadingAdText = stringResource(id = R.string.loading_ad)
+
+    // Surface one-off UI events (e.g. "ad not ready") from the ViewModel.
+    LaunchedEffect(settingsViewModel) {
+        settingsViewModel.events.collectLatest { event ->
+            when (event) {
+                SettingsUiEvent.AdNotReady ->
+                    Toast.makeText(context, loadingAdText, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    var showResetDialog by rememberSaveable { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -93,6 +102,7 @@ fun SettingsScreen(navController: NavController, settingsViewModel: SettingsView
                 item {
                     SettingsCard {
                         FocusSectionContent(settingsViewModel)
+
                     }
                 }
 
@@ -112,11 +122,25 @@ fun SettingsScreen(navController: NavController, settingsViewModel: SettingsView
                 item { SettingsSectionHeader(stringResource(id = R.string.appearance).uppercase()) }
                 item {
                     SettingsCard {
-                        AppearanceSectionContent(settingsViewModel)
-                    }
+    AppearanceSectionContent(settingsViewModel)
+}
+
                 }
 
                 item { Spacer(modifier = Modifier.height(24.dp)) }
+
+                // DIAGNOSTICS SECTION — only shown in debug builds. The
+                // "Use Test Ads" toggle is for verifying the ad flow on a
+                // device; it has no business in a shipping app.
+                if (BuildConfig.DEBUG) {
+                    item { SettingsSectionHeader(stringResource(id = R.string.diagnostics).uppercase()) }
+                    item {
+                        SettingsCard {
+                            DiagnosticsSectionContent(settingsViewModel)
+                        }
+                    }
+                    item { Spacer(modifier = Modifier.height(24.dp)) }
+                }
 
                 // ABOUT SECTION
                 item { SettingsSectionHeader(stringResource(id = R.string.about).uppercase()) }
@@ -174,7 +198,7 @@ private fun SettingsHeader(navController: NavController) {
         ) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(id = R.string.cd_back),
                 tint = MaterialTheme.colorScheme.onBackground
             )
         }
@@ -221,7 +245,7 @@ fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
 fun FocusSectionContent(viewModel: SettingsViewModel) {
     val userPreferences by viewModel.userPreferencesFlow.collectAsState(initial = null)
     val selectedDuration = userPreferences?.focusDuration ?: 25
-    var showCustomDurationDialog by remember { mutableStateOf(false) }
+    var showCustomDurationDialog by rememberSaveable { mutableStateOf(false) }
 
     // Focus Duration Row
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -289,15 +313,20 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
     if (showCustomDurationDialog) {
         CustomDurationDialog(
             onDismiss = { showCustomDurationDialog = false },
-            onSetDuration = {
-                it.toIntOrNull()?.let { duration ->
+            onSetDuration = { input ->
+                val duration = input.toIntOrNull()
+                if (duration != null && duration in MIN_FOCUS_DURATION..MAX_FOCUS_DURATION) {
                     viewModel.updateFocusDuration(duration)
                     showCustomDurationDialog = false
                 }
+                // If invalid, the dialog itself surfaces the error and stays open.
             }
         )
     }
 }
+
+private const val MIN_FOCUS_DURATION = 1
+private const val MAX_FOCUS_DURATION = 180
 
 @Composable
 fun RowScope.DurationSegment(duration: Int, isSelected: Boolean, onClick: () -> Unit) {
@@ -331,7 +360,7 @@ fun RowScope.DurationSegmentCustom(isSelected: Boolean, onClick: () -> Unit) {
     ) {
         Icon(
             imageVector = Icons.Filled.Edit,
-            contentDescription = "Custom",
+            contentDescription = stringResource(id = R.string.cd_custom),
             tint = if (isSelected) Color.Black else Color.Gray,
             modifier = Modifier.size(16.dp)
         )
@@ -346,9 +375,18 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
 
     // Formatting helper
     fun formatTime(h: Int, m: Int): String {
-        val amPm = if (h >= 12) "PM" else "AM"
-        val hour12 = if (h > 12) h - 12 else if (h == 0) 12 else h
-        return String.format("%02d:%02d %s", hour12, m, amPm)
+        // Delegate to platform DateFormat so the system 12/24h preference
+        // is respected and the locale's time format is used.
+        val cal = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, h)
+            set(java.util.Calendar.MINUTE, m)
+        }
+        val flags = android.text.format.DateUtils.FORMAT_SHOW_TIME or
+            if (android.text.format.DateFormat.is24HourFormat(context))
+                android.text.format.DateUtils.FORMAT_24HOUR
+            else
+                android.text.format.DateUtils.FORMAT_12HOUR
+        return android.text.format.DateUtils.formatDateTime(context, cal.timeInMillis, flags)
     }
 
     LaunchedEffect(userPreferences) {
@@ -441,7 +479,7 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
                         },
                         currentHour,
                         currentMinute,
-                        false // 12h format
+                        android.text.format.DateFormat.is24HourFormat(context)
                     ).show()
                 },
                 colors = ButtonDefaults.textButtonColors(contentColor = ToggleActiveTrack),
@@ -643,11 +681,63 @@ fun ThemeOptionCard(
 }
 
 @Composable
+fun DiagnosticsSectionContent(viewModel: SettingsViewModel) {
+    val useTestAds by viewModel.useTestAds.collectAsState()
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SettingsIcon(
+                    icon = Icons.Filled.BugReport,
+                    bgColor = IconBgOrange,
+                    tint = IconTintOrange
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(
+                        text = stringResource(id = R.string.use_test_ads),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = stringResource(id = R.string.use_test_ads_subtitle),
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                }
+            }
+            Switch(
+                checked = useTestAds,
+                onCheckedChange = { viewModel.setUseTestAds(it) },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = ToggleActiveTrack,
+                    uncheckedThumbColor = Color.White,
+                    uncheckedTrackColor = ToggleInactiveTrack,
+                    uncheckedBorderColor = Color.Transparent
+                )
+            )
+        }
+    }
+}
+
+@Composable
 fun AboutSectionContent() {
     val context = LocalContext.current
 
     AboutItemRow(title = stringResource(id = R.string.rate_us), icon = null) {
-        // TODO: Rate Us
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse(context.getString(R.string.play_store_listing_url))
+        )
+        context.startActivity(intent)
     }
     Divider(color = Color(0xFFF0F0F0), thickness = 1.dp)
     AboutItemRow(title = stringResource(id = R.string.privacy_policy), icon = Icons.Filled.ArrowForward) {
@@ -761,20 +851,39 @@ fun SettingsIcon(icon: ImageVector, bgColor: Color, tint: Color) {
 @Composable
 fun CustomDurationDialog(onDismiss: () -> Unit, onSetDuration: (String) -> Unit) {
     var duration by remember { mutableStateOf("") }
+    val parsed = duration.toIntOrNull()
+    val isInvalid = duration.isNotBlank() && (parsed == null || parsed !in MIN_FOCUS_DURATION..MAX_FOCUS_DURATION)
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = stringResource(id = R.string.set_custom_duration)) },
         text = {
-            TextField(
-                value = duration,
-                onValueChange = { duration = it },
-                label = { Text(stringResource(id = R.string.duration_in_minutes)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
+            Column {
+                TextField(
+                    value = duration,
+                    onValueChange = { newValue ->
+                        // Restrict to digits only.
+                        duration = newValue.filter { it.isDigit() }.take(3)
+                    },
+                    label = { Text(stringResource(id = R.string.duration_in_minutes)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = isInvalid,
+                    supportingText = {
+                        if (isInvalid) {
+                            Text(
+                                text = stringResource(id = R.string.duration_invalid),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                )
+            }
         },
         confirmButton = {
-            Button(onClick = { onSetDuration(duration) }) {
+            Button(
+                onClick = { onSetDuration(duration) },
+                enabled = !isInvalid && duration.isNotBlank()
+            ) {
                 Text(stringResource(id = R.string.set))
             }
         },

@@ -1,6 +1,5 @@
 package com.focusstreak.app.ui
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
@@ -29,7 +28,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -37,14 +35,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.focusstreak.app.R
 import com.focusstreak.app.ui.theme.FocusStreakTheme
+import com.focusstreak.app.util.findActivity
 import com.focusstreak.app.viewmodel.ProgressViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
@@ -65,15 +66,10 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
     val userPreferences by progressViewModel.userPreferences.collectAsState()
     val weekDays by progressViewModel.weekDays.collectAsState()
     val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
+    val scope = rememberCoroutineScope()
 
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = ProgressBackground.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
-        }
-    }
+    // Note: status-bar styling is owned by FocusStreakTheme.
 
     Box(
         modifier = Modifier
@@ -93,7 +89,13 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
                 StreakSection(
                     currentStreak = userPreferences.currentStreak,
                     onShareClick = {
-                        shareStreak(context, userPreferences.currentStreak, userPreferences.totalSessions)
+                        scope.launch {
+                            shareStreak(
+                                context,
+                                userPreferences.currentStreak,
+                                userPreferences.totalSessions
+                            )
+                        }
                     }
                 )
             }
@@ -167,7 +169,7 @@ private fun ProgressHeader(navController: NavController) {
         ) {
             Icon(
                 imageVector = Icons.Filled.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(id = R.string.cd_back),
                 tint = TextWhite
             )
         }
@@ -196,7 +198,7 @@ fun StreakSection(currentStreak: Int, onShareClick: () -> Unit) {
                 .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
             Text(
-                text = "TOP 5% OF USERS",
+                text = stringResource(id = R.string.top_users),
                 color = BadgeGreen,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
@@ -330,7 +332,7 @@ fun ThisWeekSection(weekDays: List<Triple<String, Boolean, Boolean>>) {
 fun DayCircle(day: String, isCompleted: Boolean, isToday: Boolean) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = day.take(1),
+            text = day.take(2),
             color = TextGrey,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium
@@ -370,8 +372,8 @@ fun StatsGrid(totalFocusMinutes: Int, totalSessions: Int) {
     ) {
         StatCard(
             title = stringResource(id = R.string.hours),
-            value = String.format("%.1f", totalFocusMinutes / 60.0),
-            subtitle = "Total focused time",
+            value = String.format(java.util.Locale.US, "%.1f", totalFocusMinutes / 60.0),
+            subtitle = stringResource(id = R.string.total_focused_time),
             icon = Icons.Filled.AccessTime,
             iconBg = IconBgPurple,
             iconTint = AccentPurpleLight,
@@ -380,7 +382,7 @@ fun StatsGrid(totalFocusMinutes: Int, totalSessions: Int) {
         StatCard(
             title = stringResource(id = R.string.sessions),
             value = totalSessions.toString(),
-            subtitle = "Completed sessions",
+            subtitle = stringResource(id = R.string.completed_sessions),
             icon = Icons.Filled.CheckCircle,
             iconBg = IconBgTeal,
             iconTint = Color(0xFF26A69A),
@@ -493,62 +495,82 @@ fun MilestoneCard(title: String, isUnlocked: Boolean) {
     }
 }
 
-fun shareStreak(context: Context, streak: Int, sessions: Int) {
-    val width = 1080
-    val height = 1080
-    val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
-    val canvas = android.graphics.Canvas(bitmap)
+suspend fun shareStreak(context: Context, streak: Int, sessions: Int) {
+    // Bitmap creation, drawing, and file I/O are off the main thread to
+    // avoid ANRs on slower devices (~4.4 MB ARGB_8888 allocation).
+    val uri = withContext(Dispatchers.IO) {
+        val width = 1080
+        val height = 1080
+        val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
 
-    // Background
-    canvas.drawColor(android.graphics.Color.parseColor("#0F0A1E"))
+        canvas.drawColor(android.graphics.Color.parseColor("#0F0A1E"))
 
-    // Text Paint
-    val paint = android.graphics.Paint().apply {
-        color = android.graphics.Color.WHITE
-        textAlign = android.graphics.Paint.Align.CENTER
-        isAntiAlias = true
-        typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+        val paint = android.graphics.Paint().apply {
+            color = android.graphics.Color.WHITE
+            textAlign = android.graphics.Paint.Align.CENTER
+            isAntiAlias = true
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+        }
+
+        paint.textSize = 60f
+        canvas.drawText(context.getString(R.string.streak_share_branding), width / 2f, 150f, paint)
+
+        paint.textSize = 400f
+        canvas.drawText(streak.toString(), width / 2f, height / 2f + 50f, paint)
+
+        paint.textSize = 60f
+        paint.color = android.graphics.Color.parseColor("#888888")
+        canvas.drawText(context.getString(R.string.streak_share_label), width / 2f, height / 2f + 200f, paint)
+
+        paint.textSize = 50f
+        paint.color = android.graphics.Color.WHITE
+        canvas.drawText(
+            context.getString(R.string.streak_share_sessions, sessions),
+            width / 2f,
+            height / 2f + 300f,
+            paint
+        )
+
+        paint.textSize = 40f
+        paint.color = android.graphics.Color.WHITE
+        canvas.drawText(
+            context.getString(R.string.streak_share_motto),
+            width / 2f,
+            height - 150f,
+            paint
+        )
+
+        // Ensure the shared/ subfolder exists (matches FileProvider scope).
+        val sharedDir = File(context.cacheDir, "shared")
+        if (!sharedDir.exists()) sharedDir.mkdirs()
+        val file = File(sharedDir, "streak_share.png")
+        FileOutputStream(file).use { stream ->
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+        }
+        bitmap.recycle()
+
+        FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
     }
 
-    // Branding
-    paint.textSize = 60f
-    canvas.drawText("FocusStreak 💜", width / 2f, 150f, paint)
-
-    // Streak Number
-    paint.textSize = 400f
-    canvas.drawText(streak.toString(), width / 2f, height / 2f + 50f, paint)
-
-    // Label
-    paint.textSize = 60f
-    paint.color = android.graphics.Color.parseColor("#888888")
-    canvas.drawText("DAY STREAK", width / 2f, height / 2f + 200f, paint)
-
-    // Sessions
-    paint.textSize = 50f
-    paint.color = android.graphics.Color.WHITE
-    canvas.drawText("$sessions Sessions Completed", width / 2f, height / 2f + 300f, paint)
-
-    // Motivational Quote
-    paint.textSize = 40f
-    paint.color = android.graphics.Color.WHITE
-    canvas.drawText("Staying focused. One day at a time.", width / 2f, height - 150f, paint)
-
-    try {
-        val file = File(context.cacheDir, "streak_share.png")
-        val stream = FileOutputStream(file)
-        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
-        stream.close()
-
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "image/png"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_TEXT, "I’m building my focus streak with FocusStreak 💜")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    // startActivity must be on the main thread.
+    withContext(Dispatchers.Main) {
+        try {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_TEXT, context.getString(R.string.share_streak_text, streak))
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_chooser_title)))
+        } catch (e: android.content.ActivityNotFoundException) {
+            android.util.Log.w("ProgressScreen", "No activity available to share streak", e)
+        } catch (e: Exception) {
+            android.util.Log.e("ProgressScreen", "Failed to share streak", e)
         }
-        context.startActivity(Intent.createChooser(intent, "Share Streak"))
-    } catch (e: Exception) {
-        e.printStackTrace()
     }
 }

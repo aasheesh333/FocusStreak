@@ -1,6 +1,5 @@
 package com.focusstreak.app.ui
 
-import android.app.Activity
 import android.graphics.BlurMaskFilter
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -13,10 +12,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -38,18 +37,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.focusstreak.app.BuildConfig
 import com.focusstreak.app.R
 import com.focusstreak.app.navigation.Screen
 import com.focusstreak.app.ui.theme.FocusStreakTheme
+import com.focusstreak.app.util.findActivity
 import com.focusstreak.app.viewmodel.HomeViewModel
 import com.focusstreak.app.viewmodel.TimerState
 import android.view.WindowManager
-import androidx.compose.runtime.DisposableEffect
 
 // --- Colors from Home Design (Dark Theme) ---
 private val HomeBackground = Color(0xFF0F0A1E)
@@ -66,28 +63,23 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
     val timerState by homeViewModel.timerState.collectAsState()
     val timeInMillis by homeViewModel.timeInMillis.collectAsState()
     val userPreferences by homeViewModel.userPreferences.collectAsState()
-    val totalTime = userPreferences.focusDuration * 60 * 1000L
-    val context = LocalContext.current as Activity
 
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = HomeBackground.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
-        }
-    }
+    val totalTime = userPreferences.focusDuration * 60 * 1000L
+    val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
+
+    // Note: status-bar styling is owned by FocusStreakTheme.
 
     // Keep screen on when timer is running
-    DisposableEffect(timerState) {
-        val window = context.window
-        if (timerState is TimerState.Running) {
+    DisposableEffect(timerState, activity) {
+        val window = activity?.window
+        if (window != null && timerState is TimerState.Running) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
         onDispose {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
 
@@ -117,9 +109,9 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
     }
 
     // Ad Logic: Show ad when in AdShowing state
-    if (timerState is TimerState.AdShowing) {
-        LaunchedEffect(timerState) {
-            homeViewModel.showInterstitialAd(context)
+    if (timerState is TimerState.AdShowing && activity != null) {
+        LaunchedEffect(timerState, activity) {
+            homeViewModel.showInterstitialAd(activity)
         }
     }
 
@@ -129,7 +121,7 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
             onDismiss = { homeViewModel.endTimer() },
             onStartAnotherSession = { homeViewModel.startTimer() },
             onTakeBreak = { homeViewModel.endTimer() },
-            onGetBonusTime = { homeViewModel.showRewardedAd(context) }
+            onGetBonusTime = { activity?.let { homeViewModel.showRewardedAd(it) } }
         )
     }
 }
@@ -366,8 +358,24 @@ fun Footer(timerState: TimerState, viewModel: HomeViewModel) {
                 )
             }
             is TimerState.AdShowing -> {
-                 // Keep visible or show loading
-                 // Minimal changes: Just show empty space or loading
+                Row(
+                    modifier = buttonModifier,
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = TextWhite,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(id = R.string.ad_loading),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextWhite
+                    )
+                }
             }
         }
     }

@@ -8,41 +8,98 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 
+/**
+ * Wraps a rewarded ad unit.
+ *
+ * See [InterstitialAdManager] for the [useTestAdUnit] rationale: when
+ * enabled, requests go to Google's always-fills test rewarded unit,
+ * which is the fastest way to distinguish "rewarded flow is broken"
+ * from "real rewarded unit has 0 fill".
+ */
 class RewardedAdManager(private val context: Context) {
 
     private var rewardedAd: RewardedAd? = null
 
+    /**
+     * True = always use Google's official test rewarded unit.
+     * Default false (production).
+     */
+    var useTestAdUnit: Boolean = false
+
+    private fun adUnitId(): String =
+        if (useTestAdUnit) GOOGLE_TEST_REWARDED_ID
+        else BuildConfig.ADMOB_REWARDED_ID
+
     fun loadAd() {
         val adRequest = AdRequest.Builder().build()
+        val unitId = adUnitId()
+        android.util.Log.i(
+            "RewardedAdManager",
+            "Requesting ad load (unit=$unitId, testMode=$useTestAdUnit)"
+        )
         RewardedAd.load(
             context,
-            BuildConfig.ADMOB_REWARDED_ID,
+            unitId,
             adRequest,
             object : RewardedAdLoadCallback() {
                 override fun onAdFailedToLoad(adError: LoadAdError) {
+                    // See InterstitialAdManager for code reference.
+                    android.util.Log.w(
+                        "RewardedAdManager",
+                        "Ad failed to load: code=${adError.code} " +
+                            "domain=${adError.domain} msg=${adError.message} " +
+                            "testMode=$useTestAdUnit"
+                    )
                     rewardedAd = null
                 }
 
                 override fun onAdLoaded(ad: RewardedAd) {
+                    android.util.Log.i(
+                        "RewardedAdManager",
+                        "Ad loaded (unit=$unitId, testMode=$useTestAdUnit)"
+                    )
                     rewardedAd = ad
                 }
             }
         )
     }
 
-    fun showAd(activity: Activity, onAdNotReady: () -> Unit = {}, onRewardEarned: () -> Unit) {
-        if (rewardedAd != null) {
-            rewardedAd?.fullScreenContentCallback = object : com.google.android.gms.ads.FullScreenContentCallback() {
+    fun showAd(
+        activity: Activity,
+        onAdNotReady: () -> Unit = {},
+        onRewardEarned: () -> Unit
+    ) {
+        val ad = rewardedAd
+        if (ad != null) {
+            ad.fullScreenContentCallback = object : com.google.android.gms.ads.FullScreenContentCallback() {
                 override fun onAdDismissedFullScreenContent() {
                     rewardedAd = null
                     loadAd()
                 }
+
+                override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError) {
+                    android.util.Log.w("RewardedAdManager", "Ad failed to show: ${adError.message}")
+                    rewardedAd = null
+                    loadAd()
+                    onAdNotReady()
+                }
             }
-            rewardedAd?.show(activity) {
+            ad.show(activity) {
                 onRewardEarned()
             }
         } else {
+            android.util.Log.w(
+                "RewardedAdManager",
+                "showAd() called but no ad loaded yet " +
+                    "(testMode=$useTestAdUnit). Invoking onAdNotReady."
+            )
             onAdNotReady()
         }
+    }
+
+    companion object {
+        // Google's official always-fills test rewarded unit ID.
+        const val GOOGLE_TEST_REWARDED_ID =
+            "ca-app-pub-3940256099942544/5224354917"
     }
 }

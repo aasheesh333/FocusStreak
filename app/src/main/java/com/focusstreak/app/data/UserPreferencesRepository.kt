@@ -4,9 +4,11 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import java.text.SimpleDateFormat
+import java.io.IOException
 import java.util.*
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
@@ -25,9 +27,20 @@ class UserPreferencesRepository(private val context: Context) {
         val DAILY_REMINDER_ENABLED = booleanPreferencesKey("daily_reminder_enabled")
         val SOUND_EFFECTS_ENABLED = booleanPreferencesKey("sound_effects_enabled")
         val APP_LAUNCH_COUNT = intPreferencesKey("app_launch_count")
+        val BONUS_MINUTES = intPreferencesKey("bonus_minutes")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data
+        .catch { exception ->
+            // DataStore throws IOException on disk errors. Emit an empty
+            // Preferences so downstream operators can keep working; rethrow
+            // any other exception type.
+            if (exception is IOException) {
+                emit(androidx.datastore.preferences.core.emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
         .map { preferences ->
             val completedDates = preferences[PreferencesKeys.COMPLETED_DATES] ?: emptySet()
             val totalSessions = preferences[PreferencesKeys.TOTAL_SESSIONS] ?: 0
@@ -40,9 +53,10 @@ class UserPreferencesRepository(private val context: Context) {
             val dailyReminderEnabled = preferences[PreferencesKeys.DAILY_REMINDER_ENABLED] ?: false
             val soundEffectsEnabled = preferences[PreferencesKeys.SOUND_EFFECTS_ENABLED] ?: true
             val appLaunchCount = preferences[PreferencesKeys.APP_LAUNCH_COUNT] ?: 0
+            val bonusMinutes = preferences[PreferencesKeys.BONUS_MINUTES] ?: 0
             UserPreferences(
                 completedDates,
-                calculateStreak(completedDates),
+                StreakCalculator.calculate(completedDates),
                 totalSessions,
                 totalFocusMinutes,
                 focusDuration,
@@ -52,7 +66,8 @@ class UserPreferencesRepository(private val context: Context) {
                 autoStartBreak,
                 dailyReminderEnabled,
                 soundEffectsEnabled,
-                appLaunchCount
+                appLaunchCount,
+                bonusMinutes
             )
         }
 
@@ -60,7 +75,12 @@ class UserPreferencesRepository(private val context: Context) {
         context.dataStore.edit { preferences ->
             val completedDates = preferences[PreferencesKeys.COMPLETED_DATES] ?: emptySet()
             val newCompletedDates = completedDates.toMutableSet()
-            newCompletedDates.add(SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()))
+            newCompletedDates.add(StreakCalculator.DATE_KEY_FORMAT.format(Date()))
+            // Prune to last ~1 year to keep the set bounded and the
+            // read/write performance stable for long-term users.
+            val oneYearAgoMs = System.currentTimeMillis() - 365L * 24 * 60 * 60 * 1000
+            val oneYearAgoKey = StreakCalculator.DATE_KEY_FORMAT.format(Date(oneYearAgoMs))
+            newCompletedDates.removeAll { it < oneYearAgoKey }
             preferences[PreferencesKeys.COMPLETED_DATES] = newCompletedDates
 
             val totalSessions = (preferences[PreferencesKeys.TOTAL_SESSIONS] ?: 0) + 1
@@ -70,44 +90,16 @@ class UserPreferencesRepository(private val context: Context) {
         }
     }
 
-    private fun calculateStreak(completedDates: Set<String>): Int {
-        if (completedDates.isEmpty()) return 0
-        val sortedDates = completedDates.map {
-            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(it)
-        }.sortedDescending()
-
-        var streak = 0
-        val calendar = Calendar.getInstance()
-        val today = calendar.clone() as Calendar
-
-        val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(today.time)
-        var isTodayCompleted = completedDates.contains(todayStr)
-
-        if (isTodayCompleted) {
-            streak = 1
-            calendar.add(Calendar.DAY_OF_YEAR, -1)
-            for (i in 1 until sortedDates.size) {
-                if (isSameDay(calendar, Calendar.getInstance().apply { time = sortedDates[i] })) {
-                    streak++
-                    calendar.add(Calendar.DAY_OF_YEAR, -1)
-                } else {
-                    break
-                }
-            }
-        } else {
-            calendar.add(Calendar.DAY_OF_YEAR, -1)
-            for (date in sortedDates) {
-                if (isSameDay(calendar, Calendar.getInstance().apply { time = date })) {
-                    streak++
-                    calendar.add(Calendar.DAY_OF_YEAR, -1)
-                } else {
-                    break
-                }
-            }
-        }
-        return streak
-    }
-
+    /**
+     * Compute the user's current consecutive-day streak from a set of
+     * completed-date keys. The walk starts from "today" (or "yesterday" if
+     * today isn't completed) and counts back day-by-day.
+     *
+     * Pure function — visible for testing.
+     */
+    @VisibleForTesting
+    fun calculateStreak(completedDates: Set<String>): Int =
+        StreakCalculator.calculate(completedDates)
 
     suspend fun updateFocusDuration(duration: Int) {
         context.dataStore.edit { preferences ->
@@ -153,14 +145,32 @@ class UserPreferencesRepository(private val context: Context) {
         }
     }
 
-    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
-        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+    suspend fun setBonusMinutes(minutes: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.BONUS_MINUTES] = minutes.coerceAtLeast(0)
+        }
     }
 
+    suspend fun consumeBonusMinutes(): Int {
+        var consumed = 0
+        context.dataStore.edit { preferences ->
+            consumed = preferences[PreferencesKeys.BONUS_MINUTES] ?: 0
+            preferences[PreferencesKeys.BONUS_MINUTES] = 0
+        }
+        return consumed
+    }
+
+    /**
+     * Reset only the user-progress-related preferences, leaving the user's
+     * personal settings (theme, focus duration, reminder, etc.) intact.
+     */
     suspend fun resetProgress() {
         context.dataStore.edit { preferences ->
-            preferences.clear()
+            preferences.remove(PreferencesKeys.COMPLETED_DATES)
+            preferences.remove(PreferencesKeys.TOTAL_SESSIONS)
+            preferences.remove(PreferencesKeys.TOTAL_FOCUS_MINUTES)
+            preferences.remove(PreferencesKeys.APP_LAUNCH_COUNT)
+            preferences.remove(PreferencesKeys.BONUS_MINUTES)
         }
     }
 }
@@ -177,5 +187,24 @@ data class UserPreferences(
     val autoStartBreak: Boolean,
     val dailyReminderEnabled: Boolean,
     val soundEffectsEnabled: Boolean,
-    val appLaunchCount: Int
-)
+    val appLaunchCount: Int,
+    val bonusMinutes: Int = 0
+) {
+    companion object {
+        val DEFAULT = UserPreferences(
+            completedDates = emptySet(),
+            currentStreak = 0,
+            totalSessions = 0,
+            totalFocusMinutes = 0,
+            focusDuration = 25,
+            theme = "System",
+            reminderHour = 9,
+            reminderMinute = 0,
+            autoStartBreak = false,
+            dailyReminderEnabled = false,
+            soundEffectsEnabled = true,
+            appLaunchCount = 0,
+            bonusMinutes = 0
+        )
+    }
+}

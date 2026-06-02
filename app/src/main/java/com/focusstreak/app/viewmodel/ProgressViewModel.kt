@@ -8,18 +8,26 @@ import com.focusstreak.app.data.UserPreferences
 import com.focusstreak.app.data.UserPreferencesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
+import java.util.TimeZone
 
 class ProgressViewModel(application: Application) : AndroidViewModel(application) {
 
     private val userPreferencesRepository: UserPreferencesRepository = (application as FocusStreakApplication).userPreferencesRepository
 
-    private val _userPreferences = MutableStateFlow(UserPreferences(emptySet(), 0, 0, 0, 25, "System", 9, 0, false, false, true, 0))
+    private val _userPreferences = MutableStateFlow(UserPreferences.DEFAULT)
     val userPreferences: StateFlow<UserPreferences> = _userPreferences
 
     private val _weekDays = MutableStateFlow<List<Triple<String, Boolean, Boolean>>>(emptyList())
     val weekDays: StateFlow<List<Triple<String, Boolean, Boolean>>> = _weekDays
+
+    // Locale.ROOT so the date key is stable across locale changes.
+    private val dateKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).apply {
+        timeZone = TimeZone.getDefault()
+    }
 
     init {
         viewModelScope.launch {
@@ -31,23 +39,23 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun updateWeekDays(completedDates: Set<String>) {
-        val calendar = java.util.Calendar.getInstance()
-        val today = calendar.get(java.util.Calendar.DAY_OF_WEEK)
+        val calendar = Calendar.getInstance()
+        val today = calendar.get(Calendar.DAY_OF_WEEK)
         _weekDays.value = (0..6).map {
-            val dayCalendar = java.util.Calendar.getInstance()
-            dayCalendar.add(java.util.Calendar.DAY_OF_YEAR, it - 6)
-            val dayName = when (dayCalendar.get(java.util.Calendar.DAY_OF_WEEK)) {
-                1 -> "S"
-                2 -> "M"
-                3 -> "T"
-                4 -> "W"
-                5 -> "T"
-                6 -> "F"
-                7 -> "S"
+            val dayCalendar = Calendar.getInstance()
+            dayCalendar.add(Calendar.DAY_OF_YEAR, it - 6)
+            val dayName = when (dayCalendar.get(Calendar.DAY_OF_WEEK)) {
+                Calendar.SUNDAY -> "Su"
+                Calendar.MONDAY -> "Mo"
+                Calendar.TUESDAY -> "Tu"
+                Calendar.WEDNESDAY -> "We"
+                Calendar.THURSDAY -> "Th"
+                Calendar.FRIDAY -> "Fr"
+                Calendar.SATURDAY -> "Sa"
                 else -> ""
             }
-            val dateString = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(dayCalendar.time)
-            Triple(dayName, completedDates.contains(dateString), dayCalendar.get(java.util.Calendar.DAY_OF_WEEK) == today)
+            val dateString = dateKeyFormat.format(dayCalendar.time)
+            Triple(dayName, completedDates.contains(dateString), dayCalendar.get(Calendar.DAY_OF_WEEK) == today)
         }
     }
 }

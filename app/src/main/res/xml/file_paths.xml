@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <cache-path name="shared_images" path="." />
+    <!--
+        Restrict the FileProvider to a dedicated `shared/` subfolder of the
+        app's cache directory. Callers writing the share image MUST place
+        it in cacheDir/shared/ for it to be eligible to be shared.
+    -->
+    <cache-path name="shared_streak" path="shared/" />
 </paths>

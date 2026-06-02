@@ -28,6 +28,9 @@
     <string name="sound_effects">Sound Effects</string>
     <string name="appearance">Appearance</string>
     <string name="theme">Theme</string>
+    <string name="diagnostics">Diagnostics</string>
+    <string name="use_test_ads">Use Test Ads</string>
+    <string name="use_test_ads_subtitle">Always-fills Google sample ads. Use to confirm the ad flow works on this device.</string>
     <string name="about">About</string>
     <string name="rate_us">Rate Us</string>
     <string name="privacy_policy">Privacy Policy</string>
@@ -58,4 +61,38 @@
     <string name="watch_ad_to_apply_theme">Watch a short ad to apply this theme?</string>
     <string name="watch_ad">Watch Ad</string>
     <string name="change_theme">Change Theme</string>
+
+    <!-- Streak share image -->
+    <string name="streak_share_branding">FocusStreak 💜</string>
+    <string name="streak_share_label">DAY STREAK</string>
+    <string name="streak_share_sessions">%1$d Sessions Completed</string>
+    <string name="streak_share_motto">Staying focused. One day at a time.</string>
+    <string name="share_chooser_title">Share Streak</string>
+    <string name="watch_short_video">Watch a short video</string>
+
+    <!-- General -->
+    <string name="cd_back">Back</string>
+    <string name="cd_custom">Custom</string>
+    <string name="top_users">TOP 5% OF USERS</string>
+    <string name="total_focused_time">Total focused time</string>
+    <string name="completed_sessions">Completed sessions</string>
+    <string name="loading_ad">Loading ad, please wait…</string>
+    <string name="ad_loading">Ad loading…</string>
+    <string name="duration_invalid">Enter a value between 1 and 180</string>
+    <string name="share_streak_with_focus">I’m building my focus streak with FocusStreak 💜</string>
+
+    <!--
+      Play Store listing URLs. The package name must match the
+      production applicationId (the PACKAGE_NAME CI secret).
+    -->
+    <string name="play_store_listing_url" translatable="false">https://play.google.com/store/apps/details?id=com.dhanuk.focusstreak</string>
+
+    <!--
+      Last-resort UI shown when setContent / the initial Compose
+      composition throws. Plain TextView-based so it works even if
+      Compose itself is unhealthy.
+    -->
+    <string name="fallback_title">FocusStreak couldn’t start</string>
+    <string name="fallback_detail_template">%1$s: %2$s</string>
+    <string name="fallback_logcat_hint">Full details in logcat under tag "MainActivity". Please share with the developer.</string>
 </resources>

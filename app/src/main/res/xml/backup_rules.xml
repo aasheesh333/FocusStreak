@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <!-- TODO: Add any backup rules here -->
+    <!--
+        FocusStreak uses DataStore Preferences to store user progress
+        (streak dates, focus minutes, etc.). Allow that single file to be
+        backed up via Auto Backup so users can recover their streak when
+        they reinstall, but exclude everything else.
+    -->
+    <include domain="file" path="datastore/user_preferences.preferences_pb" />
 </full-backup-content>

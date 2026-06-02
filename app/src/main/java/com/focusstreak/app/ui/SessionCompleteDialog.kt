@@ -190,11 +190,11 @@ fun SessionCompleteDialog(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
                                 )
-                                Text(
-                                    text = "Watch a short video", // Hardcoded as per design or add to strings
-                                    color = TextGrey,
-                                    fontSize = 12.sp
-                                )
+                            Text(
+                                text = stringResource(id = R.string.watch_short_video),
+                                color = TextGrey,
+                                fontSize = 12.sp
+                            )
                             }
                             Icon(
                                 imageVector = Icons.Filled.ArrowForward,
