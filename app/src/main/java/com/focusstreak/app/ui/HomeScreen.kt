@@ -41,12 +41,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.focusstreak.app.R
+import com.focusstreak.app.ads.BannerAd
 import com.focusstreak.app.navigation.Screen
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import com.focusstreak.app.util.findActivity
 import com.focusstreak.app.viewmodel.HomeViewModel
 import com.focusstreak.app.viewmodel.TimerState
 import android.view.WindowManager
+import android.content.Context
+import android.content.Intent
 
 // --- Colors from Home Design (Dark Theme) ---
 private val HomeBackground = Color(0xFF0F0A1E)
@@ -95,7 +98,16 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            HomeHeader(navController, userPreferences.currentStreak)
+            HomeHeader(
+                navController = navController,
+                currentStreak = userPreferences.currentStreak,
+                onShareClick = {
+                    shareStreakText(
+                        context = context,
+                        streak = userPreferences.currentStreak
+                    )
+                }
+            )
 
             Box(
                 modifier = Modifier.weight(1f),
@@ -105,6 +117,13 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
             }
 
             Footer(timerState, homeViewModel)
+
+            // Banner ad pinned below the Footer. We intentionally
+            // only show it when the timer is Idle so the user isn't
+            // distracted by ads while focusing.
+            if (timerState is TimerState.Idle) {
+                BannerAd(modifier = Modifier.padding(top = 8.dp))
+            }
         }
     }
 
@@ -127,12 +146,14 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
 }
 
 @Composable
-fun HomeHeader(navController: NavController, currentStreak: Int) {
+fun HomeHeader(navController: NavController, currentStreak: Int, onShareClick: () -> Unit) {
     val focusStreakText = stringResource(id = R.string.focus_streak)
     val settingsDesc = stringResource(id = R.string.settings)
     val dayStreakDesc = stringResource(id = R.string.day_streak)
     val daysText = stringResource(id = R.string.days, currentStreak)
     val momentumText = stringResource(id = R.string.keep_the_momentum)
+    val viewDashboardText = stringResource(id = R.string.view_streak_dashboard)
+    val shareDesc = stringResource(id = R.string.share_my_streak)
 
     val fireIcon = ImageVector.vectorResource(id = R.drawable.ic_fire)
 
@@ -166,12 +187,18 @@ fun HomeHeader(navController: NavController, currentStreak: Int) {
             }
         }
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Streak Section
+        // Streak Section — now visibly a card the user can tap to
+        // open the streak dashboard, with a quick share button.
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable { navController.navigate(Screen.Progress.route) }
+            modifier = Modifier
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color.White.copy(alpha = 0.06f))
+                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                .clickable { navController.navigate(Screen.Progress.route) }
+                .padding(horizontal = 20.dp, vertical = 14.dp)
         ) {
             Icon(
                 imageVector = fireIcon,
@@ -183,9 +210,23 @@ fun HomeHeader(navController: NavController, currentStreak: Int) {
             Text(
                 text = daysText,
                 color = TextWhite,
-                fontSize = 40.sp,
+                fontSize = 36.sp,
                 fontWeight = FontWeight.Bold
             )
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = viewDashboardText,
+                tint = TextGrey
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            IconButton(onClick = onShareClick) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = shareDesc,
+                    tint = AccentPurpleLight
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -415,5 +456,30 @@ fun GradientButton(
 fun HomeScreenPreview() {
     FocusStreakTheme {
         HomeScreen(rememberNavController())
+    }
+}
+
+/**
+ * Quick text-only share of the current streak count. Lightweight
+ * counterpart of the PNG-card share on the Progress screen. Falls
+ * back to a no-op (with a logcat warning) if no chooser activity
+ * is available on the device.
+ */
+fun shareStreakText(context: Context, streak: Int) {
+    try {
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(
+                Intent.EXTRA_TEXT,
+                context.getString(R.string.share_streak_text, streak)
+            )
+        }
+        context.startActivity(
+            Intent.createChooser(sendIntent, context.getString(R.string.share_chooser_title))
+        )
+    } catch (e: android.content.ActivityNotFoundException) {
+        android.util.Log.w("HomeScreen", "No activity available to share streak", e)
+    } catch (e: Exception) {
+        android.util.Log.e("HomeScreen", "Failed to share streak", e)
     }
 }

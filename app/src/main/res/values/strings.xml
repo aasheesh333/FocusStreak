@@ -13,6 +13,8 @@
     <string name="my_progress">My Progress</string>
     <string name="day_streak">Day Streak</string>
     <string name="share_streak">Share Streak</string>
+    <string name="view_streak_dashboard">View streak dashboard</string>
+    <string name="share_my_streak">Share my streak</string>
     <string name="this_week">This Week</string>
     <string name="hours">Hours</string>
     <string name="sessions">Sessions</string>
