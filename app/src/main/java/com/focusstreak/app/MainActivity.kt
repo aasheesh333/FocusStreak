@@ -4,7 +4,9 @@ import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -52,6 +54,19 @@ class MainActivity : ComponentActivity() {
         // use (SettingsScreen, when the user toggles the daily reminder).
         // We deliberately do not request it on every cold start here.
 
+        // Workaround for androidx.activity.compose 1.8.2's
+        // ComponentActivity.setContent, which calls
+        //   window.decorView.findViewById<ViewGroup>(android.R.id.content)
+        //     .getChildAt(0) as? ComposeView
+        // without a safe call on findViewById. On some OEM Android 12+
+        // builds with our legacy framework theme, the decor view's
+        // content frame is null at this point, so getChildAt(0) throws
+        // a NPE. Forcing installDecor() (via setContentView with a
+        // transparent empty View) makes sure the content frame exists
+        // before setContent runs. Once androidx.activity.compose 1.9+ is
+        // available (has ?.getChildAt(0)), this can be removed.
+        ensureContentFrame()
+
         // Diagnostic: catch any throwable from setContent / the initial
         // composition and show a fallback UI so the user sees a friendly
         // message instead of a black screen, and so we can capture the
@@ -68,6 +83,17 @@ class MainActivity : ComponentActivity() {
         } catch (t: Throwable) {
             Log.e(TAG, "setContent / initial composition failed", t)
             showFallbackUi(t)
+        }
+    }
+
+    /**
+     * Forces the activity's content frame (android.R.id.content) to
+     * exist. See the comment in onCreate for why this is needed.
+     */
+    private fun ensureContentFrame() {
+        val decor = window.decorView
+        if (decor.findViewById<ViewGroup>(android.R.id.content) == null) {
+            setContentView(View(this))
         }
     }
 
