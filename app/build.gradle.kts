@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.focusstreak.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = System.getenv("PACKAGE_NAME") ?: "com.focusstreak.app"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
         versionName = System.getenv("VERSION_NAME") ?: "1.0"
 
