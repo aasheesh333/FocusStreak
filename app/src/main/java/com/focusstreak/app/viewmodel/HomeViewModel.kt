@@ -2,6 +2,7 @@ package com.focusstreak.app.viewmodel
 
 import android.app.Activity
 import android.app.Application
+import android.media.RingtoneManager
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -43,7 +44,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     // Used for coroutine-based countdown. When the user pauses, we cancel
     // the job; when they resume, we start a new one with the remaining time.
     private var tickerJob: Job? = null
-    private var mediaPlayer: android.media.MediaPlayer? = null
 
     init {
         viewModelScope.launch {
@@ -66,10 +66,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private fun playCompletionSound() {
         if (_userPreferences.value.soundEffectsEnabled) {
             try {
-                if (mediaPlayer == null) {
-                    mediaPlayer = android.media.MediaPlayer.create(getApplication(), R.raw.success)
-                }
-                mediaPlayer?.start()
+                val notificationUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                RingtoneManager.getRingtone(getApplication(), notificationUri).play()
             } catch (e: Exception) {
                 android.util.Log.w("HomeViewModel", "Failed to play completion sound", e)
             }
@@ -138,16 +136,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun endTimer() {
         tickerJob?.cancel()
-        // Reset the underlying MediaPlayer for next time without blocking
-        // the main thread (was: mediaPlayer?.stop(); mediaPlayer?.prepare()).
-        try {
-            if (mediaPlayer?.isPlaying == true) {
-                mediaPlayer?.pause()
-            }
-            mediaPlayer?.seekTo(0)
-        } catch (e: Exception) {
-            android.util.Log.w("HomeViewModel", "Failed to reset media player", e)
-        }
         _timeInMillis.value = _userPreferences.value.focusDuration * 60 * 1000L
         _timerState.value = TimerState.Idle
     }
@@ -195,11 +183,5 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         tickerJob?.cancel()
-        try {
-            mediaPlayer?.release()
-        } catch (e: Exception) {
-            android.util.Log.w("HomeViewModel", "Failed to release media player", e)
-        }
-        mediaPlayer = null
     }
 }

@@ -159,7 +159,7 @@ dependencies {
     implementation("androidx.compose.foundation:foundation-layout")
     implementation("androidx.navigation:navigation-compose:2.8.9")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.datastore:datastore-preferences:1.1.5")
+    implementation("androidx.datastore:datastore-preferences:1.1.6")
     implementation("com.google.android.gms:play-services-ads:22.6.0")
     implementation("com.google.android.ump:user-messaging-platform:2.2.0")
     implementation("androidx.work:work-runtime-ktx:2.10.1")

@@ -56,7 +56,7 @@ class UserPreferencesRepository(private val context: Context) {
             val soundEffectsEnabled = preferences[PreferencesKeys.SOUND_EFFECTS_ENABLED] ?: true
             val appLaunchCount = preferences[PreferencesKeys.APP_LAUNCH_COUNT] ?: 0
             val bonusMinutes = preferences[PreferencesKeys.BONUS_MINUTES] ?: 0
-            val currentCategory = preferences[PreferencesKeys.CURRENT_CATEGORY] ?: FocusCategories.first()
+            val currentCategory = preferences[PreferencesKeys.CURRENT_CATEGORY] ?: FocusCategories.first().id
             UserPreferences(
                 completedDates,
                 StreakCalculator.calculate(completedDates),
@@ -75,7 +75,7 @@ class UserPreferencesRepository(private val context: Context) {
             )
         }
 
-    suspend fun updateOnSessionCompleted(focusDurationMinutes: Int, category: String = FocusCategories.first()) {
+    suspend fun updateOnSessionCompleted(focusDurationMinutes: Int, category: String = FocusCategories.first().id) {
         context.dataStore.edit { preferences ->
             val completedDates = preferences[PreferencesKeys.COMPLETED_DATES] ?: emptySet()
             val newCompletedDates = completedDates.toMutableSet()
@@ -220,7 +220,7 @@ data class UserPreferences(
     val soundEffectsEnabled: Boolean,
     val appLaunchCount: Int,
     val bonusMinutes: Int = 0,
-    val focusCategory: String = FocusCategories.first()
+    val focusCategory: String = FocusCategories.first().id
 ) {
     companion object {
         val DEFAULT = UserPreferences(
@@ -237,7 +237,7 @@ data class UserPreferences(
             soundEffectsEnabled = true,
             appLaunchCount = 0,
             bonusMinutes = 0,
-            focusCategory = FocusCategories.first()
+            focusCategory = FocusCategories.first().id
         )
     }
 }

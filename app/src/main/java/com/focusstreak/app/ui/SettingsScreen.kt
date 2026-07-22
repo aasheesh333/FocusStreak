@@ -41,6 +41,8 @@ import androidx.navigation.compose.rememberNavController
 import com.focusstreak.app.BuildConfig
 import com.focusstreak.app.R
 import com.focusstreak.app.data.FocusCategories
+import com.focusstreak.app.ui.IconBgOrange
+import com.focusstreak.app.ui.IconTintOrange
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import com.focusstreak.app.util.findActivity
 import com.focusstreak.app.viewmodel.SettingsUiEvent
@@ -57,9 +59,6 @@ private val IconTintPurple = Color(0xFF6750A4)
 
 private val IconBgTeal = Color(0xFFE0F2F1)
 private val IconTintTeal = Color(0xFF009688)
-
-private val IconBgOrange = Color(0xFFFFE0B2)
-private val IconTintOrange = Color(0xFFFF9800)
 
 private val IconBgBlue = Color(0xFFE3F2FD)
 private val IconTintBlue = Color(0xFF2196F3)

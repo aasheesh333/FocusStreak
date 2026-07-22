@@ -437,6 +437,7 @@ fun StatsGrid(stats: SessionStats) {
     }
 }
 
+@Composable
 fun MonthlyHeatmapSection(days: List<HeatmapCell>) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(

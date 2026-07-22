@@ -45,12 +45,18 @@ fun String.decodeSessionHistory(): List<FocusSession> =
         emptyList()
     }
 
+/** A focus category displayed in the UI. */
+data class FocusCategory(
+    val id: String,
+    val name: String
+)
+
 /** Predefined categories shown in the UI. */
 val FocusCategories = listOf(
-    "General",
-    "Work",
-    "Study",
-    "Reading",
-    "Exercise",
-    "Deep Work"
+    FocusCategory("general", "General"),
+    FocusCategory("work", "Work"),
+    FocusCategory("study", "Study"),
+    FocusCategory("reading", "Reading"),
+    FocusCategory("exercise", "Exercise"),
+    FocusCategory("deep_work", "Deep Work")
 )
