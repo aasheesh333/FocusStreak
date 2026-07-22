@@ -129,20 +129,6 @@ android {
     }
 }
 
-configurations.configureEach {
-    resolutionStrategy {
-        // OneSignal 5.9.7 transitively pulls Okio 3.16.x which is compiled with
-        // Kotlin 2.2.x metadata. Our Kotlin compiler (2.0.21) cannot read that
-        // metadata, so force a Kotlin 1.9.x-era Okio and the matching stdlib.
-        force(
-            "org.jetbrains.kotlin:kotlin-stdlib:2.0.21",
-            "org.jetbrains.kotlin:kotlin-stdlib-common:2.0.21",
-            "com.squareup.okio:okio:3.9.1",
-            "com.squareup.okio:okio-jvm:3.9.1"
-        )
-    }
-}
-
 dependencies {
 
     implementation("androidx.core:core-ktx:1.16.0")
