@@ -14,6 +14,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -41,7 +44,9 @@ import androidx.navigation.compose.rememberNavController
 import com.focusstreak.app.R
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import com.focusstreak.app.util.findActivity
+import com.focusstreak.app.viewmodel.HeatmapCell
 import com.focusstreak.app.viewmodel.ProgressViewModel
+import com.focusstreak.app.viewmodel.SessionStats
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -64,6 +69,8 @@ private val IconBgTeal = Color(0xFF1E2D2F)
 @Composable
 fun ProgressScreen(navController: NavController, progressViewModel: ProgressViewModel = viewModel()) {
     val userPreferences by progressViewModel.userPreferences.collectAsState()
+    val sessionStats by progressViewModel.sessionStats.collectAsState()
+    val calendarDays by progressViewModel.calendarDays.collectAsState()
     val weekDays by progressViewModel.weekDays.collectAsState()
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
@@ -75,6 +82,7 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
         modifier = Modifier
             .fillMaxSize()
             .background(ProgressBackground)
+            .windowInsetsPadding(WindowInsets.systemBars)
     ) {
         LazyColumn(
             modifier = Modifier
@@ -87,13 +95,14 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
 
             item {
                 StreakSection(
-                    currentStreak = userPreferences.currentStreak,
+                    currentStreak = sessionStats.currentStreak,
+                    bestStreak = sessionStats.bestStreak,
                     onShareClick = {
                         scope.launch {
                             shareStreak(
                                 context,
-                                userPreferences.currentStreak,
-                                userPreferences.totalSessions
+                                sessionStats.currentStreak,
+                                sessionStats.totalSessions
                             )
                         }
                     }
@@ -106,7 +115,11 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
 
-            item { StatsGrid(userPreferences.totalFocusMinutes, userPreferences.totalSessions) }
+            item { StatsGrid(sessionStats) }
+
+            item { Spacer(modifier = Modifier.height(24.dp)) }
+
+            item { MonthlyHeatmapSection(calendarDays) }
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
 
@@ -184,7 +197,7 @@ private fun ProgressHeader(navController: NavController) {
 }
 
 @Composable
-fun StreakSection(currentStreak: Int, onShareClick: () -> Unit) {
+fun StreakSection(currentStreak: Int, bestStreak: Int, onShareClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
@@ -233,6 +246,14 @@ fun StreakSection(currentStreak: Int, onShareClick: () -> Unit) {
 
         Text(
             text = stringResource(id = R.string.day_streak),
+            color = TextGrey,
+            fontSize = 14.sp
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = stringResource(id = R.string.best_streak_format, bestStreak),
             color = TextGrey,
             fontSize = 14.sp
         )
@@ -365,29 +386,89 @@ fun DayCircle(day: String, isCompleted: Boolean, isToday: Boolean) {
 }
 
 @Composable
-fun StatsGrid(totalFocusMinutes: Int, totalSessions: Int) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        StatCard(
-            title = stringResource(id = R.string.hours),
-            value = String.format(java.util.Locale.US, "%.1f", totalFocusMinutes / 60.0),
-            subtitle = stringResource(id = R.string.total_focused_time),
-            icon = Icons.Filled.AccessTime,
-            iconBg = IconBgPurple,
-            iconTint = AccentPurpleLight,
-            modifier = Modifier.weight(1f)
+fun StatsGrid(stats: SessionStats) {
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            StatCard(
+                title = stringResource(id = R.string.hours),
+                value = String.format(java.util.Locale.US, "%.1f", stats.totalMinutes / 60.0),
+                subtitle = stringResource(id = R.string.total_focused_time),
+                icon = Icons.Filled.AccessTime,
+                iconBg = IconBgPurple,
+                iconTint = AccentPurpleLight,
+                modifier = Modifier.weight(1f)
+            )
+            StatCard(
+                title = stringResource(id = R.string.sessions),
+                value = stats.totalSessions.toString(),
+                subtitle = stringResource(id = R.string.completed_sessions),
+                icon = Icons.Filled.CheckCircle,
+                iconBg = IconBgTeal,
+                iconTint = Color(0xFF26A69A),
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            StatCard(
+                title = stringResource(id = R.string.weekly_minutes),
+                value = stats.weeklyMinutes.toString(),
+                subtitle = stringResource(id = R.string.this_week),
+                icon = Icons.Filled.Today,
+                iconBg = IconBgOrange,
+                iconTint = Color(0xFFFF9800),
+                modifier = Modifier.weight(1f)
+            )
+            StatCard(
+                title = stringResource(id = R.string.top_category),
+                value = stats.topCategory,
+                subtitle = stringResource(id = R.string.most_used),
+                icon = Icons.Filled.Category,
+                iconBg = IconBgTeal,
+                iconTint = Color(0xFF26A69A),
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+fun MonthlyHeatmapSection(days: List<HeatmapCell>) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(id = R.string.last_six_weeks),
+            color = TextWhite,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
-        StatCard(
-            title = stringResource(id = R.string.sessions),
-            value = totalSessions.toString(),
-            subtitle = stringResource(id = R.string.completed_sessions),
-            icon = Icons.Filled.CheckCircle,
-            iconBg = IconBgTeal,
-            iconTint = Color(0xFF26A69A),
-            modifier = Modifier.weight(1f)
-        )
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(7),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            items(days.size) { index ->
+                val cell = days[index]
+                val color = when {
+                    cell.isToday -> AccentPurple
+                    cell.isCompleted -> AccentPurpleLight.copy(alpha = 0.7f)
+                    else -> CardBackground.copy(alpha = 0.4f)
+                }
+                Box(
+                    modifier = Modifier
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(color)
+                )
+            }
+        }
     }
 }
 

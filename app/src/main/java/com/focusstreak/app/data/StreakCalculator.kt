@@ -71,6 +71,41 @@ object StreakCalculator {
         return streak
     }
 
+    /**
+     * Compute the best (longest) consecutive-day streak ever achieved from
+     * the set of completed-date keys. Walks the sorted dates counting
+     * uninterrupted sequences.
+     */
+    fun calculateBestStreak(completedDates: Set<String>): Int {
+        if (completedDates.isEmpty()) return 0
+        val sortedDates = completedDates.mapNotNull {
+            try {
+                DATE_KEY_FORMAT.parse(it)
+            } catch (_: Exception) {
+                null
+            }
+        }.sorted()
+
+        if (sortedDates.isEmpty()) return 0
+
+        var best = 1
+        var current = 1
+        var previous = Calendar.getInstance().apply { time = sortedDates[0] }
+
+        for (i in 1 until sortedDates.size) {
+            val candidate = Calendar.getInstance().apply { time = sortedDates[i] }
+            previous.add(Calendar.DAY_OF_YEAR, 1)
+            if (isSameDay(previous, candidate)) {
+                current++
+            } else {
+                current = 1
+            }
+            if (current > best) best = current
+            previous = candidate
+        }
+        return best
+    }
+
     private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
         return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
                 cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)

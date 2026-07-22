@@ -23,6 +23,7 @@
     <string name="fourteen_day_streak">14-Day Streak</string>
     <string name="thirty_day_streak">30-Day Streak</string>
     <string name="focus">Focus</string>
+    <string name="focus_category">Focus Category</string>
     <string name="focus_duration">Focus Duration</string>
     <string name="auto_start_break">Auto-start Break</string>
     <string name="notifications">Notifications</string>
@@ -82,6 +83,13 @@
     <string name="ad_loading">Ad loading…</string>
     <string name="duration_invalid">Enter a value between 1 and 180</string>
     <string name="share_streak_with_focus">I’m building my focus streak with FocusStreak 💜</string>
+
+    <!-- Progress stats -->
+    <string name="best_streak_format">Best: %1$d</string>
+    <string name="weekly_minutes">Weekly Min</string>
+    <string name="top_category">Top Category</string>
+    <string name="most_used">Most used</string>
+    <string name="last_six_weeks">Last 6 Weeks</string>
 
     <!--
       Play Store listing URLs. The package name must match the

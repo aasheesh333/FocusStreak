@@ -76,6 +76,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun updateCategory(category: String) {
+        viewModelScope.launch {
+            userPreferencesRepository.updateCategory(category)
+        }
+    }
+
     fun showThemeAd(activity: Activity, theme: String) {
         rewardedAdManager.showAd(
             activity = activity,

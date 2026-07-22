@@ -1,0 +1,22 @@
+name: 'Setup Android Build Environment'
+description: 'Checkout repo, set up JDK 21, and cache Gradle dependencies. Reusable composite action for Android workflows.'
+
+inputs:
+  java-version:
+    description: 'JDK version to install'
+    required: false
+    default: '21'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up JDK ${{ inputs.java-version }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ inputs.java-version }}
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission to gradlew
+      run: chmod +x ./gradlew
+      shell: bash

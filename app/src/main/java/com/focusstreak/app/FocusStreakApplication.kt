@@ -9,6 +9,7 @@ import com.focusstreak.app.ads.InterstitialAdManager
 import com.focusstreak.app.ads.RewardedAdManager
 import com.focusstreak.app.data.UserPreferencesRepository
 import com.focusstreak.app.notification.NotificationChannels
+import com.focusstreak.app.notification.OneSignalManager
 import com.google.android.gms.ads.MobileAds
 
 class FocusStreakApplication : Application() {
@@ -45,6 +46,11 @@ class FocusStreakApplication : Application() {
         // Create notification channels once at process start so user-editable
         // channel settings (importance, sound, vibration) are stable.
         createNotificationChannels()
+
+        // Initialize OneSignal for push notifications and in-app messaging.
+        // Uses ONESIGNAL_APP_ID from BuildConfig (provided by CI secrets for
+        // release builds; blank-safe for debug builds).
+        OneSignalManager.initialize(this, BuildConfig.ONESIGNAL_APP_ID)
     }
 
     /**

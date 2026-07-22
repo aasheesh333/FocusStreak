@@ -1,0 +1,48 @@
+name: Target API Level Policy Check
+
+on:
+  pull_request:
+    paths:
+      - 'app/build.gradle.kts'
+      - 'build.gradle.kts'
+      - '.github/workflows/android-target-api-check.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/build.gradle.kts'
+      - 'build.gradle.kts'
+
+permissions:
+  contents: read
+
+jobs:
+  target-api-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify targetSdk and compileSdk are at least 36
+        run: |
+          set -e
+          echo "Checking targetSdk and compileSdk values in app/build.gradle.kts..."
+
+          COMPILE_SDK=$(grep -oP 'compileSdk\s*=\s*\K[0-9]+' app/build.gradle.kts || true)
+          TARGET_SDK=$(grep -oP 'targetSdk\s*=\s*\K[0-9]+' app/build.gradle.kts || true)
+
+          echo "compileSdk = ${COMPILE_SDK:-<not found>}"
+          echo "targetSdk  = ${TARGET_SDK:-<not found>}"
+
+          if [[ -z "$COMPILE_SDK" || "$COMPILE_SDK" -lt 36 ]]; then
+            echo "ERROR: compileSdk must be 36 or higher to meet the Aug 31, 2026 Google Play requirement."
+            exit 1
+          fi
+
+          if [[ -z "$TARGET_SDK" || "$TARGET_SDK" -lt 36 ]]; then
+            echo "ERROR: targetSdk must be 36 or higher to meet the Aug 31, 2026 Google Play requirement."
+            exit 1
+          fi
+
+          echo "Target API level policy gate passed."

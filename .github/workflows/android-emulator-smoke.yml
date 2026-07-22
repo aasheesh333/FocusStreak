@@ -1,0 +1,53 @@
+name: Android 16 Emulator Smoke Test
+
+# Smoke-test the app on an Android 16 (API level 36) emulator. This is a
+# heavier job, so it runs nightly and on-demand instead of on every PR.
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 03:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  emulator-smoke-api36:
+    runs-on: macos-latest   # Required for hardware-accelerated emulator
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Android build environment
+        uses: ./.github/actions/setup-android-env
+
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd
+            ~/.android/adb
+          key: avd-36-${{ runner.os }}
+
+      - name: Run instrumented tests on API 36 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            adb shell pm list packages | grep "${{ secrets.PACKAGE_NAME }}" || true
+            ./gradlew connectedCheck --no-daemon --stacktrace
+
+      - name: Upload instrumented test results
+        if: failure() || success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: instrumented-test-results-api36
+          path: app/build/reports/androidTests/connected/
+          retention-days: 7

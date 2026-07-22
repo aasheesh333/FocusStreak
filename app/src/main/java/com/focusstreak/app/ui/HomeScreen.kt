@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,6 +44,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.focusstreak.app.R
 import com.focusstreak.app.navigation.Screen
+import com.focusstreak.app.data.FocusCategories
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import com.focusstreak.app.util.findActivity
 import com.focusstreak.app.viewmodel.HomeViewModel
@@ -94,6 +97,7 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
@@ -110,6 +114,14 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
                         )
                     }
                 }
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            CategorySelector(
+                selectedCategory = userPreferences.focusCategory,
+                onCategorySelected = { homeViewModel.selectCategory(it) },
+                modifier = Modifier.fillMaxWidth()
             )
 
             Box(
@@ -234,6 +246,51 @@ fun HomeHeader(navController: NavController, currentStreak: Int, onShareClick: (
             fontSize = 14.sp,
             modifier = Modifier.width(260.dp)
         )
+    }
+}
+
+@Composable
+private fun CategorySelector(
+    selectedCategory: String,
+    onCategorySelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val labelText = stringResource(id = R.string.focus_category)
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = labelText.uppercase(),
+            color = TextGrey,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 2.sp,
+            modifier = Modifier.padding(bottom = 10.dp)
+        )
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(FocusCategories) { category ->
+                val selected = category.id == selectedCategory
+                FilterChip(
+                    selected = selected,
+                    onClick = { onCategorySelected(category.id) },
+                    label = { Text(category.name) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentPurple,
+                        selectedLabelColor = TextWhite,
+                        containerColor = Color.White.copy(alpha = 0.06f),
+                        labelColor = TextWhite
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selected,
+                        borderColor = Color.White.copy(alpha = 0.1f),
+                        selectedBorderColor = AccentPurple
+                    )
+                )
+            }
+        }
     }
 }
 

@@ -11,12 +11,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.lifecycleScope
 import com.focusstreak.app.ads.ConsentManager
 import com.focusstreak.app.data.UserPreferences
 import com.focusstreak.app.navigation.AppNavigation
+import com.focusstreak.app.notification.OneSignalManager
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import kotlinx.coroutines.launch
 
@@ -24,6 +26,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Required on Android 15+ and mandatory for apps targeting Android 16.
+        // Makes the app draw behind the system bars; Compose screens apply
+        // the necessary insets padding.
+        enableEdgeToEdge()
+
         // Note: we previously used androidx.core:core-splashscreen here,
         // but its postSplashScreenTheme transition was racing with
         // setContent and throwing "Window couldn't find content container
@@ -55,16 +63,14 @@ class MainActivity : ComponentActivity() {
         // We deliberately do not request it on every cold start here.
 
         // Workaround for androidx.activity.compose 1.8.2's
-        // ComponentActivity.setContent, which calls
-        //   window.decorView.findViewById<ViewGroup>(android.R.id.content)
-        //     .getChildAt(0) as? ComposeView
-        // without a safe call on findViewById. On some OEM Android 12+
-        // builds with our legacy framework theme, the decor view's
-        // content frame is null at this point, so getChildAt(0) throws
-        // a NPE. Forcing installDecor() (via setContentView with a
-        // transparent empty View) makes sure the content frame exists
-        // before setContent runs. Once androidx.activity.compose 1.9+ is
-        // available (has ?.getChildAt(0)), this can be removed.
+        // ComponentActivity.setContent older behavior. On some OEM Android 12+
+        // builds with a legacy framework theme the decor view's content frame
+        // can be null at this point, so setContent's findViewById(...)
+        // .getChildAt(0) would throw a NPE. Forcing installDecor() (via
+        // setContentView with a transparent empty View) makes sure the
+        // content frame exists before setContent runs. This has been kept
+        // as a defensive measure even though activity-compose 1.9+ fixed
+        // the unsafe cast.
         ensureContentFrame()
 
         // Diagnostic: catch any throwable from setContent / the initial
@@ -80,6 +86,11 @@ class MainActivity : ComponentActivity() {
                     AppNavigation()
                 }
             }
+
+            // Set up the OneSignal push-subscription observer so we can show
+            // the official integration-complete dialog once the device is
+            // registered. This is gated to show only once.
+            OneSignalManager.setupPushSubscriptionObserver(this)
         } catch (t: Throwable) {
             Log.e(TAG, "setContent / initial composition failed", t)
             showFallbackUi(t)

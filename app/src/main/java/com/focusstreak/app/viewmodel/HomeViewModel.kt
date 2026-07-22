@@ -106,7 +106,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun onTimerFinished() {
         viewModelScope.launch {
-            userPreferencesRepository.updateOnSessionCompleted(_userPreferences.value.focusDuration)
+            userPreferencesRepository.updateOnSessionCompleted(
+                _userPreferences.value.focusDuration,
+                _userPreferences.value.focusCategory
+            )
         }
         playCompletionSound()
         // Gate the first-time ad: only show if the user has launched the
@@ -125,6 +128,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resumeTimer() {
         beginTicker()
+    }
+
+    fun selectCategory(category: String) {
+        viewModelScope.launch {
+            userPreferencesRepository.updateCategory(category)
+        }
     }
 
     fun endTimer() {

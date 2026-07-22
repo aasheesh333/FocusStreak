@@ -28,6 +28,8 @@ class UserPreferencesRepository(private val context: Context) {
         val SOUND_EFFECTS_ENABLED = booleanPreferencesKey("sound_effects_enabled")
         val APP_LAUNCH_COUNT = intPreferencesKey("app_launch_count")
         val BONUS_MINUTES = intPreferencesKey("bonus_minutes")
+        val CURRENT_CATEGORY = stringPreferencesKey("current_category")
+        val SESSION_HISTORY = stringPreferencesKey("session_history")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data
@@ -54,6 +56,7 @@ class UserPreferencesRepository(private val context: Context) {
             val soundEffectsEnabled = preferences[PreferencesKeys.SOUND_EFFECTS_ENABLED] ?: true
             val appLaunchCount = preferences[PreferencesKeys.APP_LAUNCH_COUNT] ?: 0
             val bonusMinutes = preferences[PreferencesKeys.BONUS_MINUTES] ?: 0
+            val currentCategory = preferences[PreferencesKeys.CURRENT_CATEGORY] ?: FocusCategories.first()
             UserPreferences(
                 completedDates,
                 StreakCalculator.calculate(completedDates),
@@ -67,11 +70,12 @@ class UserPreferencesRepository(private val context: Context) {
                 dailyReminderEnabled,
                 soundEffectsEnabled,
                 appLaunchCount,
-                bonusMinutes
+                bonusMinutes,
+                currentCategory
             )
         }
 
-    suspend fun updateOnSessionCompleted(focusDurationMinutes: Int) {
+    suspend fun updateOnSessionCompleted(focusDurationMinutes: Int, category: String = FocusCategories.first()) {
         context.dataStore.edit { preferences ->
             val completedDates = preferences[PreferencesKeys.COMPLETED_DATES] ?: emptySet()
             val newCompletedDates = completedDates.toMutableSet()
@@ -87,6 +91,18 @@ class UserPreferencesRepository(private val context: Context) {
             val totalFocusMinutes = (preferences[PreferencesKeys.TOTAL_FOCUS_MINUTES] ?: 0) + focusDurationMinutes
             preferences[PreferencesKeys.TOTAL_SESSIONS] = totalSessions
             preferences[PreferencesKeys.TOTAL_FOCUS_MINUTES] = totalFocusMinutes
+
+            // Append session to history for rich stats.
+            val session = FocusSession(
+                timestampMillis = System.currentTimeMillis(),
+                durationMinutes = focusDurationMinutes,
+                category = category
+            )
+            val history = (preferences[PreferencesKeys.SESSION_HISTORY] ?: "").decodeSessionHistory()
+                .toMutableList()
+                .apply { add(session) }
+                .takeLast(500) // Keep the history bounded.
+            preferences[PreferencesKeys.SESSION_HISTORY] = history.encodeToJson()
         }
     }
 
@@ -112,6 +128,20 @@ class UserPreferencesRepository(private val context: Context) {
             preferences[PreferencesKeys.THEME] = theme
         }
     }
+
+    suspend fun updateCategory(category: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.CURRENT_CATEGORY] = category
+        }
+    }
+
+    val sessionHistoryFlow: Flow<List<FocusSession>> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(androidx.datastore.preferences.core.emptyPreferences()) else throw exception
+        }
+        .map { preferences ->
+            (preferences[PreferencesKeys.SESSION_HISTORY] ?: "").decodeSessionHistory()
+        }
 
     suspend fun updateReminderTime(hour: Int, minute: Int) {
         context.dataStore.edit { preferences ->
@@ -171,6 +201,7 @@ class UserPreferencesRepository(private val context: Context) {
             preferences.remove(PreferencesKeys.TOTAL_FOCUS_MINUTES)
             preferences.remove(PreferencesKeys.APP_LAUNCH_COUNT)
             preferences.remove(PreferencesKeys.BONUS_MINUTES)
+            preferences.remove(PreferencesKeys.SESSION_HISTORY)
         }
     }
 }
@@ -188,7 +219,8 @@ data class UserPreferences(
     val dailyReminderEnabled: Boolean,
     val soundEffectsEnabled: Boolean,
     val appLaunchCount: Int,
-    val bonusMinutes: Int = 0
+    val bonusMinutes: Int = 0,
+    val focusCategory: String = FocusCategories.first()
 ) {
     companion object {
         val DEFAULT = UserPreferences(
@@ -204,7 +236,8 @@ data class UserPreferences(
             dailyReminderEnabled = false,
             soundEffectsEnabled = true,
             appLaunchCount = 0,
-            bonusMinutes = 0
+            bonusMinutes = 0,
+            focusCategory = FocusCategories.first()
         )
     }
 }

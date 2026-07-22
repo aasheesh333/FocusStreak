@@ -1,0 +1,53 @@
+name: Send OneSignal Test Push
+
+on:
+  workflow_dispatch:
+    inputs:
+      heading:
+        description: 'Notification heading'
+        required: false
+        default: '👋 FocusStreak Test'
+        type: string
+      message:
+        description: 'Notification body'
+        required: false
+        default: 'This is a test push from GitHub Actions.'
+        type: string
+      segment:
+        description: 'OneSignal segment to target'
+        required: false
+        default: 'Test Users'
+        type: string
+
+jobs:
+  send-test-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send push via OneSignal REST API
+        env:
+          ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+          ONESIGNAL_REST_API_KEY: ${{ secrets.ONESIGNAL_REST_API_KEY }}
+        run: |
+          set -e
+          if [ -z "$ONESIGNAL_APP_ID" ]; then
+            echo "::error::ONESIGNAL_APP_ID secret is missing. Add it in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          if [ -z "$ONESIGNAL_REST_API_KEY" ]; then
+            echo "::error::ONESIGNAL_REST_API_KEY secret is missing. Add it in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          curl -sS -X POST 'https://api.onesignal.com/notifications' \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            -H "Authorization: Key ${ONESIGNAL_REST_API_KEY}" \
+            -d "{
+              \"app_id\": \"${ONESIGNAL_APP_ID}\",
+              \"target_channel\": \"push\",
+              \"name\": \"GitHub Actions Test Push\",
+              \"headings\": { \"en\": \"${{ github.event.inputs.heading }}\" },
+              \"contents\": { \"en\": \"${{ github.event.inputs.message }}\" },
+              \"included_segments\": [ \"${{ github.event.inputs.segment }}\" ]
+            }"
+
+          echo "Test push request sent. Check the OneSignal Dashboard > Delivery for status."

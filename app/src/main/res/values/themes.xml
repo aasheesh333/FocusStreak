@@ -23,6 +23,7 @@
     -->
     <style name="Theme.FocusStreak" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">@bool/use_light_status</item>
         <item name="android:windowBackground">@color/splash_background</item>
     </style>

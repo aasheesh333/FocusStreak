@@ -1,0 +1,38 @@
+name: Android Debug Build
+
+# Builds a debug APK from any branch or PR on demand. Useful for QA, designer,
+# or stake-holder testing without creating a full release or handling signing
+# secrets.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  debug-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Optional; debug builds skip OneSignal init if it is blank.
+      ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Android build environment
+        uses: ./.github/actions/setup-android-env
+
+      - name: Lint & Unit Tests
+        run: ./gradlew lintDebug testDebugUnitTest
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7

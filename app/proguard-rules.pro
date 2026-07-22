@@ -41,6 +41,15 @@
 -dontwarn com.google.android.ump.**
 
 # ----------------------------------------------------------------------
+# OneSignal
+# ----------------------------------------------------------------------
+-keep class com.onesignal.** { *; }
+-dontwarn com.onesignal.**
+-keep class * implements com.onesignal.notifications.INotificationServiceExtension {
+    void onNotificationReceived(com.onesignal.notifications.INotificationReceivedEvent);
+}
+
+# ----------------------------------------------------------------------
 # AndroidX WorkManager - keep Worker subclasses by name; WorkManager
 # instantiates workers via reflection on Class<*>.
 # ----------------------------------------------------------------------
@@ -48,6 +57,9 @@
 -keep public class * extends androidx.work.CoroutineWorker
 -keep public class * extends androidx.work.ListenableWorker {
     public <init>(android.content.Context, androidx.work.WorkerParameters);
+}
+-keep class androidx.work.OverwritingInputMerger {
+    public <init>();
 }
 -keep class com.focusstreak.app.notification.ReminderWorker { *; }
 

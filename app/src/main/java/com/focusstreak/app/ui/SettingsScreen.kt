@@ -11,6 +11,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -38,6 +40,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.focusstreak.app.BuildConfig
 import com.focusstreak.app.R
+import com.focusstreak.app.data.FocusCategories
 import com.focusstreak.app.ui.theme.FocusStreakTheme
 import com.focusstreak.app.util.findActivity
 import com.focusstreak.app.viewmodel.SettingsUiEvent
@@ -82,7 +85,9 @@ fun SettingsScreen(navController: NavController, settingsViewModel: SettingsView
     var showResetDialog by rememberSaveable { mutableStateOf(false) }
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars),
         color = MaterialTheme.colorScheme.background
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -275,6 +280,34 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
         DurationSegment(30, selectedDuration == 30) { viewModel.updateFocusDuration(30) }
         DurationSegment(45, selectedDuration == 45) { viewModel.updateFocusDuration(45) }
         DurationSegmentCustom(selectedDuration !in listOf(25, 30, 45)) { showCustomDurationDialog = true }
+    }
+
+    Spacer(modifier = Modifier.height(24.dp))
+    // Focus Category Row
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        SettingsIcon(icon = Icons.Filled.Category, bgColor = IconBgPurple, tint = IconTintPurple)
+        Spacer(modifier = Modifier.width(12.dp))
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(FocusCategories) { category ->
+                val selected = category.id == (userPreferences?.focusCategory ?: FocusCategories.first().id)
+                FilterChip(
+                    selected = selected,
+                    onClick = { viewModel.updateCategory(category.id) },
+                    label = { Text(category.name) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = IconTintPurple,
+                        selectedLabelColor = Color.White,
+                        containerColor = Color(0xFFF5F5F5),
+                        labelColor = Color.Black
+                    )
+                )
+            }
+        }
     }
 
     Spacer(modifier = Modifier.height(24.dp))
