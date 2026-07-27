@@ -355,6 +355,90 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
             }
         )
     }
+
+    Spacer(modifier = Modifier.height(24.dp))
+    Divider(color = Color(0xFFF0F0F0), thickness = 1.dp)
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Streak Freezes card — surfaces the user's banked freezes and
+    // explains the earning rule, so the Home chip isn't the only
+    // place they learn about the feature.
+    StreakFreezeInfoCard(
+        freezesAvailable = userPreferences?.freezesAvailable ?: 0,
+        sessionsCompleted = userPreferences?.totalSessions ?: 0
+    )
+}
+
+@Composable
+private fun StreakFreezeInfoCard(
+    freezesAvailable: Int,
+    sessionsCompleted: Int
+) {
+    val freezeCountLabel = stringResource(
+        id = R.string.freeze_count_label,
+        freezesAvailable
+    )
+    val freezeExplanation = stringResource(
+        id = R.string.freeze_explanation,
+        com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD
+    )
+    val earnedToNext = sessionsCompleted % com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD
+    val remainingToNext = com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD - earnedToNext
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0xFFF5F5F5))
+            .padding(16.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        SettingsIcon(
+            icon = Icons.Filled.AcUnit,
+            bgColor = Color(0xFFE3F2FD),
+            tint = Color(0xFF1976D2)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column {
+            Text(
+                text = freezeCountLabel,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Black
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = freezeExplanation,
+                fontSize = 13.sp,
+                color = Color.Gray,
+                lineHeight = 18.sp
+            )
+            if (freezesAvailable < com.focusstreak.app.data.MAX_FREEZE_COUNT) {
+                Spacer(modifier = Modifier.height(8.dp))
+                val progress = (sessionsCompleted % com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD) /
+                    com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD.toFloat()
+                LinearProgressIndicator(
+                    progress = { progress },
+                    color = Color(0xFF1976D2),
+                    trackColor = Color(0xFFDADADA),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(CircleShape)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = if (remainingToNext == com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD) {
+                        stringResource(id = R.string.freeze_chip_zero)
+                    } else {
+                        "$remainingToNext sessions to next freeze"
+                    },
+                    fontSize = 11.sp,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
 }
 
 private const val MIN_FOCUS_DURATION = 1

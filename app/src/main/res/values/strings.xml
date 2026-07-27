@@ -24,6 +24,13 @@
     <string name="one_hundred_day_streak">100-Day Streak</string>
     <string name="focus">Focus</string>
     <string name="focus_category">Focus Category</string>
+
+    <!-- Streak Freeze -->
+    <string name="freeze_count_label">Streak Freezes: %1$d available</string>
+    <string name="freeze_chip_zero">No freezes yet</string>
+    <string name="freeze_chip_format">%1$d freeze%2$s available</string>
+    <string name="freeze_explanation">Earn a Streak Freeze every %1$d completed sessions. A freeze auto-saves your streak on a missed day.</string>
+    <string name="freeze_applied_toast">Streak Freeze applied — your streak is safe! ❄️</string>
     <string name="focus_duration">Focus Duration</string>
     <string name="auto_start_break">Auto-start Break</string>
     <string name="notifications">Notifications</string>

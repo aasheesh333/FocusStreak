@@ -13,6 +13,14 @@ import java.util.*
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
 
+/**
+ * Streak Freeze tuning constants. Kept top-level so they can be reused
+ * by both the repository (for capping) and the UI (for explaining the
+ * threshold to the user in Settings / Home).
+ */
+const val FREEZE_GRANT_THRESHOLD = 7
+const val MAX_FREEZE_COUNT = 3
+
 class UserPreferencesRepository(private val context: Context) {
 
     private object PreferencesKeys {
@@ -30,6 +38,10 @@ class UserPreferencesRepository(private val context: Context) {
         val BONUS_MINUTES = intPreferencesKey("bonus_minutes")
         val CURRENT_CATEGORY = stringPreferencesKey("current_category")
         val SESSION_HISTORY = stringPreferencesKey("session_history")
+        // Streak Freeze: a scarce "life-line" the user earns by completing
+        // sessions. Each Freeze auto-applies to back-fill a single missed
+        // day and keep the streak alive. Capped at MAX_FREEZE_COUNT.
+        val FREEZES_AVAILABLE = intPreferencesKey("freezes_available_v1")
     }
 
     val userPreferencesFlow: Flow<UserPreferences> = context.dataStore.data
@@ -57,6 +69,7 @@ class UserPreferencesRepository(private val context: Context) {
             val appLaunchCount = preferences[PreferencesKeys.APP_LAUNCH_COUNT] ?: 0
             val bonusMinutes = preferences[PreferencesKeys.BONUS_MINUTES] ?: 0
             val currentCategory = preferences[PreferencesKeys.CURRENT_CATEGORY] ?: FocusCategories.first().id
+            val freezesAvailable = (preferences[PreferencesKeys.FREEZES_AVAILABLE] ?: 0).coerceIn(0, MAX_FREEZE_COUNT)
             UserPreferences(
                 completedDates,
                 StreakCalculator.calculate(completedDates),
@@ -71,7 +84,8 @@ class UserPreferencesRepository(private val context: Context) {
                 soundEffectsEnabled,
                 appLaunchCount,
                 bonusMinutes,
-                currentCategory
+                currentCategory,
+                freezesAvailable
             )
         }
 
@@ -87,12 +101,7 @@ class UserPreferencesRepository(private val context: Context) {
             newCompletedDates.removeAll { it < oneYearAgoKey }
             preferences[PreferencesKeys.COMPLETED_DATES] = newCompletedDates
 
-            val totalSessions = (preferences[PreferencesKeys.TOTAL_SESSIONS] ?: 0) + 1
-            val totalFocusMinutes = (preferences[PreferencesKeys.TOTAL_FOCUS_MINUTES] ?: 0) + focusDurationMinutes
-            preferences[PreferencesKeys.TOTAL_SESSIONS] = totalSessions
-            preferences[PreferencesKeys.TOTAL_FOCUS_MINUTES] = totalFocusMinutes
-
-            // Append session to history for rich stats.
+            // Session history kept bounded to last 500 entries above.
             val session = FocusSession(
                 timestampMillis = System.currentTimeMillis(),
                 durationMinutes = focusDurationMinutes,
@@ -103,7 +112,79 @@ class UserPreferencesRepository(private val context: Context) {
                 .apply { add(session) }
                 .takeLast(500) // Keep the history bounded.
             preferences[PreferencesKeys.SESSION_HISTORY] = history.encodeToJson()
+
+            val totalSessions = (preferences[PreferencesKeys.TOTAL_SESSIONS] ?: 0) + 1
+            val totalFocusMinutes = (preferences[PreferencesKeys.TOTAL_FOCUS_MINUTES] ?: 0) + focusDurationMinutes
+            preferences[PreferencesKeys.TOTAL_SESSIONS] = totalSessions
+            preferences[PreferencesKeys.TOTAL_FOCUS_MINUTES] = totalFocusMinutes
+
+            // Streak Freeze reward: earn one Freeze for every
+            // FREEZE_GRANT_THRESHOLD sessions completed, capped at the
+            // limit so a power user can't bank infinite freezes.
+            val currentFreezes = preferences[PreferencesKeys.FREEZES_AVAILABLE] ?: 0
+            val newFreezes = currentFreezes.let {
+                if (totalSessions % FREEZE_GRANT_THRESHOLD == 0 && it < MAX_FREEZE_COUNT) {
+                    (it + 1).coerceAtMost(MAX_FREEZE_COUNT)
+                } else it
+            }
+            preferences[PreferencesKeys.FREEZES_AVAILABLE] = newFreezes
         }
+    }
+
+    /**
+     * Apply a Streak Freeze to save a missed day on app launch.
+     *
+     * Conditions for using a freeze:
+     *   - "Yesterday" is not in the user's completed-dates set
+     *   - The user's current streak is <= 1 by the calculator's logic
+     *     (so an unfilled yesterday would break the streak today)
+     *   - A freeze is available
+     *   - "Yesterday" was within the last 1 calendar day (i.e., we
+     *     only back-fill a single day, never a multi-day gap)
+     *
+     * Returns `true` if a freeze was applied; `false` otherwise.
+     * Should be called once per fresh app launch (alongside
+     * `incrementAppLaunchCount()`).
+     */
+    suspend fun applyFreezeIfNeeded(): Boolean {
+        var applied = false
+        context.dataStore.edit { preferences ->
+            val completedDates = preferences[PreferencesKeys.COMPLETED_DATES] ?: emptySet()
+            val todayKey = StreakCalculator.DATE_KEY_FORMAT.format(Date())
+
+            // Only act if today ISN'T already completed and yesterday
+            // ISN'T already completed — otherwise there's nothing to
+            // freeze.
+            if (completedDates.contains(todayKey)) return@edit
+
+            val yesterdayCalendar = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_YEAR, -1)
+            }
+            val yesterdayKey = StreakCalculator.DATE_KEY_FORMAT.format(yesterdayCalendar.time)
+            if (completedDates.contains(yesterdayKey)) return@edit
+
+            val freezes = preferences[PreferencesKeys.FREEZES_AVAILABLE] ?: 0
+            if (freezes <= 0) return@edit
+
+            // Two-day-gap check: scan back from yesterday's predecessor
+            // (the day before yesterday) and confirm there IS a recent
+            // completion. If the gap is already longer than 1 day, the
+            // streak is already lost — no point spending a freeze.
+            val dayBeforeYesterday = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_YEAR, -2)
+            }
+            val dayBeforeYesterdayKey =
+                StreakCalculator.DATE_KEY_FORMAT.format(dayBeforeYesterday.time)
+            if (!completedDates.contains(dayBeforeYesterdayKey)) return@edit
+
+            // Streak would otherwise drop to 0 tomorrow — back-fill
+            // yesterday and decrement freezes.
+            val updated = completedDates.toMutableSet().apply { add(yesterdayKey) }
+            preferences[PreferencesKeys.COMPLETED_DATES] = updated
+            preferences[PreferencesKeys.FREEZES_AVAILABLE] = freezes - 1
+            applied = true
+        }
+        return applied
     }
 
     /**
@@ -202,6 +283,8 @@ class UserPreferencesRepository(private val context: Context) {
             preferences.remove(PreferencesKeys.APP_LAUNCH_COUNT)
             preferences.remove(PreferencesKeys.BONUS_MINUTES)
             preferences.remove(PreferencesKeys.SESSION_HISTORY)
+            // Freezes are earned from sessions, so they're progress too.
+            preferences.remove(PreferencesKeys.FREEZES_AVAILABLE)
         }
     }
 }
@@ -220,7 +303,9 @@ data class UserPreferences(
     val soundEffectsEnabled: Boolean,
     val appLaunchCount: Int,
     val bonusMinutes: Int = 0,
-    val focusCategory: String = FocusCategories.first().id
+    val focusCategory: String = FocusCategories.first().id,
+    // Streak Freeze: number of freezes available to back-fill missed days.
+    val freezesAvailable: Int = 0
 ) {
     companion object {
         val DEFAULT = UserPreferences(
@@ -237,7 +322,8 @@ data class UserPreferences(
             soundEffectsEnabled = true,
             appLaunchCount = 0,
             bonusMinutes = 0,
-            focusCategory = FocusCategories.first().id
+            focusCategory = FocusCategories.first().id,
+            freezesAvailable = 0
         )
     }
 }

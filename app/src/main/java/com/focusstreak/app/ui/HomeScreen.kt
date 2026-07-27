@@ -109,6 +109,8 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
             HomeHeader(
                 navController = navController,
                 currentStreak = userPreferences.currentStreak,
+                freezesAvailable = userPreferences.freezesAvailable,
+                sessionsCompleted = userPreferences.totalSessions,
                 onShareClick = {
                     activity?.let { act ->
                         shareHomeScreenshot(
@@ -161,7 +163,13 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
 }
 
 @Composable
-fun HomeHeader(navController: NavController, currentStreak: Int, onShareClick: () -> Unit) {
+fun HomeHeader(
+    navController: NavController,
+    currentStreak: Int,
+    freezesAvailable: Int,
+    sessionsCompleted: Int,
+    onShareClick: () -> Unit
+) {
     val focusStreakText = stringResource(id = R.string.focus_streak)
     val settingsDesc = stringResource(id = R.string.settings)
     val dayStreakDesc = stringResource(id = R.string.day_streak)
@@ -169,7 +177,12 @@ fun HomeHeader(navController: NavController, currentStreak: Int, onShareClick: (
     val momentumText = stringResource(id = R.string.keep_the_momentum)
     val viewDashboardText = stringResource(id = R.string.view_streak_dashboard)
     val shareDesc = stringResource(id = R.string.share_my_streak)
-
+    // Streak Freeze chip strings.
+    val freezeChipZero = stringResource(id = R.string.freeze_chip_zero)
+    val freezeExplanation = stringResource(
+        id = R.string.freeze_explanation,
+        com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD
+    )
     val fireIcon = ImageVector.vectorResource(id = R.drawable.ic_fire)
 
     Column(
@@ -253,6 +266,55 @@ fun HomeHeader(navController: NavController, currentStreak: Int, onShareClick: (
             fontSize = 14.sp,
             modifier = Modifier.width(260.dp)
         )
+
+        // Streak Freeze chip — only shown if the user has at least one
+        // freeze banked, OR is at risk-of-zero (streak <= 3) so the
+        // user can learn the feature exists even before earning one.
+        if (freezesAvailable > 0 || currentStreak <= 3) {
+            Spacer(modifier = Modifier.height(8.dp))
+            val chipText = if (freezesAvailable > 0) {
+                val plural = if (freezesAvailable == 1) "" else "s"
+                stringResource(id = R.string.freeze_chip_format, freezesAvailable, plural)
+            } else {
+                freezeChipZero
+            }
+            val progressToNextFreeze =
+                ((sessionsCompleted % com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD) / com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD.toFloat())
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.White.copy(alpha = 0.04f))
+                    .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.AcUnit,
+                    contentDescription = null,
+                    tint = Color(0xFFB4D8F5),
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = chipText,
+                    color = TextWhite,
+                    fontSize = 12.sp
+                )
+                if (freezesAvailable == 0) {
+                    // Tiny progress bar inline, showing how close the
+                    // user is to earning their first freeze.
+                    LinearProgressIndicator(
+                        progress = { progressToNextFreeze },
+                        color = Color(0xFFB4D8F5),
+                        trackColor = Color.White.copy(alpha = 0.08f),
+                        modifier = Modifier
+                            .width(70.dp)
+                            .height(4.dp)
+                            .clip(CircleShape)
+                    )
+                }
+            }
+        }
     }
 }
 
