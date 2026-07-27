@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items as lazyListItems
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -549,7 +550,7 @@ fun MilestonesSection(currentStreak: Int) {
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(milestones) { milestone ->
+            lazyListItems(milestones) { milestone ->
                 MilestoneCard(
                     title = stringResource(id = milestone.labelRes),
                     isUnlocked = currentStreak >= milestone.threshold
