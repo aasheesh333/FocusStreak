@@ -57,7 +57,6 @@ android {
         val hasReleaseTask = allTasks.any { task ->
             task.name.startsWith("assembleRelease") ||
                 task.name.startsWith("bundleRelease") ||
-                task.name.startsWith("lintRelease") ||
                 task.name == "packageRelease"
         }
         if (hasReleaseTask) {
