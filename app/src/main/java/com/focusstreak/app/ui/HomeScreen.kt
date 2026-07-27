@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -73,6 +74,9 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
     val totalTime = userPreferences.focusDuration * 60 * 1000L
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
+    val scope = rememberCoroutineScope()
+    val shareCaption = stringResource(id = R.string.share_streak_text, userPreferences.currentStreak)
+    val shareChooserTitle = stringResource(id = R.string.share_chooser_title)
 
     // Note: status-bar styling is owned by FocusStreakTheme.
 
@@ -110,7 +114,10 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
                         shareHomeScreenshot(
                             activity = act,
                             context = context,
-                            streak = userPreferences.currentStreak
+                            streak = userPreferences.currentStreak,
+                            caption = shareCaption,
+                            chooserTitle = shareChooserTitle,
+                            scope = scope
                         )
                     }
                 }
@@ -525,15 +532,27 @@ fun HomeScreenPreview() {
  * Bitmap creation and PNG encoding are offloaded to Dispatchers.IO so
  * we never ANR the main thread. startActivity is then called back on
  * the main thread.
+ *
+ * Previously this used GlobalScope, which leaks the coroutine past the
+ * Activity lifetime and ignores structured-concurrency cancellation.
+ * Now the caller passes a rememberCoroutineScope() so the capture job
+ * is cancelled when the composition leaves.
  */
-fun shareHomeScreenshot(activity: android.app.Activity, context: Context, streak: Int) {
+fun shareHomeScreenshot(
+    activity: android.app.Activity,
+    context: Context,
+    streak: Int,
+    caption: String,
+    chooserTitle: String,
+    scope: kotlinx.coroutines.CoroutineScope
+) {
     val rootView = activity.window?.decorView
     if (rootView == null) {
         android.util.Log.w("HomeScreen", "shareHomeScreenshot: decorView is null")
         return
     }
 
-    kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+    scope.launch(kotlinx.coroutines.Dispatchers.IO) {
         val uri = try {
             // Measure the view tree if not yet measured
             if (rootView.width == 0 || rootView.height == 0) {
@@ -573,10 +592,7 @@ fun shareHomeScreenshot(activity: android.app.Activity, context: Context, streak
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
             val sendIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "image/png"
-                putExtra(
-                    Intent.EXTRA_TEXT,
-                    context.getString(R.string.share_streak_text, streak)
-                )
+                putExtra(Intent.EXTRA_TEXT, caption)
                 if (uri != null) {
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -584,10 +600,7 @@ fun shareHomeScreenshot(activity: android.app.Activity, context: Context, streak
             }
             try {
                 context.startActivity(
-                    Intent.createChooser(
-                        sendIntent,
-                        context.getString(R.string.share_chooser_title)
-                    )
+                    Intent.createChooser(sendIntent, chooserTitle)
                 )
             } catch (e: android.content.ActivityNotFoundException) {
                 android.util.Log.w("HomeScreen", "No activity available to share streak", e)

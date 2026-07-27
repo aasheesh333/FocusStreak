@@ -24,6 +24,7 @@ local.properties
 *.swp
 *~
 *.keystore
+*.jks
 *build/
 *release/
 *debug/
@@ -55,6 +56,7 @@ captures/
 /app/*.swp
 /app/*~
 /app/*.keystore
+/app/*.jks
 /app/*.stacktrace
 /app/captures/
 /app/.externalNativeBuild/

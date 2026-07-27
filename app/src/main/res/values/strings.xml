@@ -9,7 +9,6 @@
     <string name="resume">Resume</string>
     <string name="end">End</string>
     <string name="start_another_session">Start Another Session</string>
-    <string name="ad_space">Ad Space (320x50)</string>
     <string name="my_progress">My Progress</string>
     <string name="day_streak">Day Streak</string>
     <string name="share_streak">Share Streak</string>
@@ -22,6 +21,7 @@
     <string name="seven_day_streak">7-Day Streak</string>
     <string name="fourteen_day_streak">14-Day Streak</string>
     <string name="thirty_day_streak">30-Day Streak</string>
+    <string name="one_hundred_day_streak">100-Day Streak</string>
     <string name="focus">Focus</string>
     <string name="focus_category">Focus Category</string>
     <string name="focus_duration">Focus Duration</string>

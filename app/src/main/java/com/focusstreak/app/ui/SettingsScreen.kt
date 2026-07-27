@@ -763,11 +763,12 @@ fun DiagnosticsSectionContent(viewModel: SettingsViewModel) {
 @Composable
 fun AboutSectionContent() {
     val context = LocalContext.current
+    val playStoreUrl = stringResource(id = R.string.play_store_listing_url)
 
     AboutItemRow(title = stringResource(id = R.string.rate_us), icon = null) {
         val intent = Intent(
             Intent.ACTION_VIEW,
-            Uri.parse(context.getString(R.string.play_store_listing_url))
+            Uri.parse(playStoreUrl)
         )
         context.startActivity(intent)
     }
