@@ -1,12 +1,11 @@
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
     namespace = "com.focusstreak.app"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = System.getenv("PACKAGE_NAME") ?: "com.focusstreak.app"
@@ -43,7 +42,6 @@ android {
         "VERSION_CODE",
         "VERSION_NAME",
         "ADMOB_APP_ID",
-        "ADMOB_BANNER_ID",
         "ADMOB_INTERSTITIAL_ID",
         "ADMOB_REWARDED_ID",
         "ONESIGNAL_APP_ID"
@@ -86,8 +84,6 @@ android {
 
             val admobAppId = envOrNull("ADMOB_APP_ID")
                 ?: "ca-app-pub-3940256099942544~3347511713" // debug fallback
-            val admobBanner = envOrNull("ADMOB_BANNER_ID")
-                ?: "ca-app-pub-3940256099942544/6300978111"
             val admobInterstitial = envOrNull("ADMOB_INTERSTITIAL_ID")
                 ?: "ca-app-pub-3940256099942544/1033173712"
             val admobRewarded = envOrNull("ADMOB_REWARDED_ID")
@@ -95,7 +91,6 @@ android {
             val oneSignalAppId = envOrNull("ONESIGNAL_APP_ID") ?: ""
 
             manifestPlaceholders["adMobAppId"] = admobAppId
-            buildConfigField("String", "ADMOB_BANNER_ID", "\"$admobBanner\"")
             buildConfigField("String", "ADMOB_INTERSTITIAL_ID", "\"$admobInterstitial\"")
             buildConfigField("String", "ADMOB_REWARDED_ID", "\"$admobRewarded\"")
             buildConfigField("String", "ONESIGNAL_APP_ID", "\"$oneSignalAppId\"")
@@ -103,8 +98,7 @@ android {
         debug {
             isMinifyEnabled = false
             // Google-provided sample IDs are safe to use in debug builds.
-            manifestPlaceholders["adMobAppId"] = "ca-app-pub-3940256099942544~3347511713"
-            buildConfigField("String", "ADMOB_BANNER_ID", "\"ca-app-pub-3940256099942544/6300978111\"")
+            manifestPlaceholders["adMobAppId"] = "ca-app-pub-3940256099942544~3940256099942544"
             buildConfigField("String", "ADMOB_INTERSTITIAL_ID", "\"ca-app-pub-3940256099942544/1033173712\"")
             buildConfigField("String", "ADMOB_REWARDED_ID", "\"ca-app-pub-3940256099942544/5224354917\"")
             // Debug builds can run without the OneSignal secret; init is skipped if blank.
@@ -115,8 +109,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        }
     }
     buildFeatures {
         compose = true
@@ -131,35 +127,35 @@ android {
 
 dependencies {
 
-    implementation("androidx.core:core-ktx:1.16.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.activity:activity-compose:1.10.1")
-    implementation(platform("androidx.compose:compose-bom:2025.04.00"))
+    implementation("androidx.core:core-ktx:1.19.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
+    implementation(platform("androidx.compose:compose-bom:2026.06.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.material:material-icons-core")
-    implementation("androidx.fragment:fragment-ktx:1.8.6")
+    implementation("androidx.fragment:fragment-ktx:1.8.9")
     implementation("androidx.compose.foundation:foundation-layout")
-    implementation("androidx.navigation:navigation-compose:2.8.9")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.datastore:datastore-preferences:1.1.6")
-    implementation("com.google.android.gms:play-services-ads:22.6.0")
-    implementation("com.google.android.ump:user-messaging-platform:2.2.0")
-    implementation("androidx.work:work-runtime-ktx:2.10.1")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
+    implementation("com.google.android.gms:play-services-ads:25.4.0")
+    implementation("com.google.android.ump:user-messaging-platform:4.0.0")
+    implementation("androidx.work:work-runtime-ktx:2.11.2")
     implementation("com.onesignal:OneSignal:5.9.7")
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
-    testImplementation("app.cash.turbine:turbine:1.2.0")
-    testImplementation("io.mockk:mockk:1.13.13")
-    testImplementation("com.google.truth:truth:1.4.4")
-    testImplementation("org.robolectric:robolectric:4.14.1")
-    testImplementation("androidx.test:core:1.6.1")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2025.04.00"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    testImplementation("app.cash.turbine:turbine:1.2.1")
+    testImplementation("io.mockk:mockk:1.14.11")
+    testImplementation("com.google.truth:truth:1.4.5")
+    testImplementation("org.robolectric:robolectric:4.16.1")
+    testImplementation("androidx.test:core:1.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2026.06.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

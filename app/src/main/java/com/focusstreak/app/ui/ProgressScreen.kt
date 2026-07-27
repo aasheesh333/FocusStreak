@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items as lazyListItems
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -123,7 +124,7 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
 
-            item { MilestonesSection() }
+            item { MilestonesSection(currentStreak = sessionStats.currentStreak) }
         }
 
         // Floating Action Button
@@ -527,7 +528,17 @@ fun StatCard(
 }
 
 @Composable
-fun MilestonesSection() {
+fun MilestonesSection(currentStreak: Int) {
+    // Thresholds (in days) and the matching string + label. A milestone
+    // is "unlocked" when the user's current streak is greater-than-or-equal
+    // the threshold. Locked cards show the next goal to aim for.
+    data class Milestone(val threshold: Int, val labelRes: Int)
+    val milestones = listOf(
+        Milestone(7, R.string.seven_day_streak),
+        Milestone(14, R.string.fourteen_day_streak),
+        Milestone(30, R.string.thirty_day_streak),
+        Milestone(100, R.string.one_hundred_day_streak)
+    )
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = stringResource(id = R.string.next_milestone),
@@ -539,9 +550,12 @@ fun MilestonesSection() {
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { MilestoneCard(stringResource(id = R.string.seven_day_streak), true) }
-            item { MilestoneCard(stringResource(id = R.string.fourteen_day_streak), false) }
-            item { MilestoneCard(stringResource(id = R.string.thirty_day_streak), false) }
+            lazyListItems(milestones) { milestone ->
+                MilestoneCard(
+                    title = stringResource(id = milestone.labelRes),
+                    isUnlocked = currentStreak >= milestone.threshold
+                )
+            }
         }
     }
 }

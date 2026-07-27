@@ -12,19 +12,22 @@ import com.focusstreak.app.notification.NotificationChannels
 import com.focusstreak.app.notification.OneSignalManager
 import com.google.android.gms.ads.MobileAds
 
-class FocusStreakApplication : Application() {
+open class FocusStreakApplication : Application() {
 
-    val userPreferencesRepository: UserPreferencesRepository by lazy {
+    // Marked `open` so tests can substitute mocks via a Robolectric
+    // @Config(application=...) subclass without needing to spin up the
+    // real DataStore / AdMob managers. Production code is unchanged.
+    open val userPreferencesRepository: UserPreferencesRepository by lazy {
         UserPreferencesRepository(this)
     }
 
     // Process-scoped singletons: there should only be one in-flight ad
     // request of each type at a time. Both ViewModels consume these.
-    val interstitialAdManager: InterstitialAdManager by lazy {
+    open val interstitialAdManager: InterstitialAdManager by lazy {
         InterstitialAdManager(this)
     }
 
-    val rewardedAdManager: RewardedAdManager by lazy {
+    open val rewardedAdManager: RewardedAdManager by lazy {
         RewardedAdManager(this)
     }
 

@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -73,6 +74,9 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
     val totalTime = userPreferences.focusDuration * 60 * 1000L
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
+    val scope = rememberCoroutineScope()
+    val shareCaption = stringResource(id = R.string.share_streak_text, userPreferences.currentStreak)
+    val shareChooserTitle = stringResource(id = R.string.share_chooser_title)
 
     // Note: status-bar styling is owned by FocusStreakTheme.
 
@@ -105,12 +109,17 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
             HomeHeader(
                 navController = navController,
                 currentStreak = userPreferences.currentStreak,
+                freezesAvailable = userPreferences.freezesAvailable,
+                sessionsCompleted = userPreferences.totalSessions,
                 onShareClick = {
                     activity?.let { act ->
                         shareHomeScreenshot(
                             activity = act,
                             context = context,
-                            streak = userPreferences.currentStreak
+                            streak = userPreferences.currentStreak,
+                            caption = shareCaption,
+                            chooserTitle = shareChooserTitle,
+                            scope = scope
                         )
                     }
                 }
@@ -154,7 +163,13 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
 }
 
 @Composable
-fun HomeHeader(navController: NavController, currentStreak: Int, onShareClick: () -> Unit) {
+fun HomeHeader(
+    navController: NavController,
+    currentStreak: Int,
+    freezesAvailable: Int,
+    sessionsCompleted: Int,
+    onShareClick: () -> Unit
+) {
     val focusStreakText = stringResource(id = R.string.focus_streak)
     val settingsDesc = stringResource(id = R.string.settings)
     val dayStreakDesc = stringResource(id = R.string.day_streak)
@@ -162,7 +177,12 @@ fun HomeHeader(navController: NavController, currentStreak: Int, onShareClick: (
     val momentumText = stringResource(id = R.string.keep_the_momentum)
     val viewDashboardText = stringResource(id = R.string.view_streak_dashboard)
     val shareDesc = stringResource(id = R.string.share_my_streak)
-
+    // Streak Freeze chip strings.
+    val freezeChipZero = stringResource(id = R.string.freeze_chip_zero)
+    val freezeExplanation = stringResource(
+        id = R.string.freeze_explanation,
+        com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD
+    )
     val fireIcon = ImageVector.vectorResource(id = R.drawable.ic_fire)
 
     Column(
@@ -246,6 +266,55 @@ fun HomeHeader(navController: NavController, currentStreak: Int, onShareClick: (
             fontSize = 14.sp,
             modifier = Modifier.width(260.dp)
         )
+
+        // Streak Freeze chip — only shown if the user has at least one
+        // freeze banked, OR is at risk-of-zero (streak <= 3) so the
+        // user can learn the feature exists even before earning one.
+        if (freezesAvailable > 0 || currentStreak <= 3) {
+            Spacer(modifier = Modifier.height(8.dp))
+            val chipText = if (freezesAvailable > 0) {
+                val plural = if (freezesAvailable == 1) "" else "s"
+                stringResource(id = R.string.freeze_chip_format, freezesAvailable, plural)
+            } else {
+                freezeChipZero
+            }
+            val progressToNextFreeze =
+                ((sessionsCompleted % com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD) / com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD.toFloat())
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.White.copy(alpha = 0.04f))
+                    .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.AcUnit,
+                    contentDescription = null,
+                    tint = Color(0xFFB4D8F5),
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = chipText,
+                    color = TextWhite,
+                    fontSize = 12.sp
+                )
+                if (freezesAvailable == 0) {
+                    // Tiny progress bar inline, showing how close the
+                    // user is to earning their first freeze.
+                    LinearProgressIndicator(
+                        progress = { progressToNextFreeze },
+                        color = Color(0xFFB4D8F5),
+                        trackColor = Color.White.copy(alpha = 0.08f),
+                        modifier = Modifier
+                            .width(70.dp)
+                            .height(4.dp)
+                            .clip(CircleShape)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -525,15 +594,27 @@ fun HomeScreenPreview() {
  * Bitmap creation and PNG encoding are offloaded to Dispatchers.IO so
  * we never ANR the main thread. startActivity is then called back on
  * the main thread.
+ *
+ * Previously this used GlobalScope, which leaks the coroutine past the
+ * Activity lifetime and ignores structured-concurrency cancellation.
+ * Now the caller passes a rememberCoroutineScope() so the capture job
+ * is cancelled when the composition leaves.
  */
-fun shareHomeScreenshot(activity: android.app.Activity, context: Context, streak: Int) {
+fun shareHomeScreenshot(
+    activity: android.app.Activity,
+    context: Context,
+    streak: Int,
+    caption: String,
+    chooserTitle: String,
+    scope: kotlinx.coroutines.CoroutineScope
+) {
     val rootView = activity.window?.decorView
     if (rootView == null) {
         android.util.Log.w("HomeScreen", "shareHomeScreenshot: decorView is null")
         return
     }
 
-    kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+    scope.launch(kotlinx.coroutines.Dispatchers.IO) {
         val uri = try {
             // Measure the view tree if not yet measured
             if (rootView.width == 0 || rootView.height == 0) {
@@ -573,10 +654,7 @@ fun shareHomeScreenshot(activity: android.app.Activity, context: Context, streak
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
             val sendIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "image/png"
-                putExtra(
-                    Intent.EXTRA_TEXT,
-                    context.getString(R.string.share_streak_text, streak)
-                )
+                putExtra(Intent.EXTRA_TEXT, caption)
                 if (uri != null) {
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -584,10 +662,7 @@ fun shareHomeScreenshot(activity: android.app.Activity, context: Context, streak
             }
             try {
                 context.startActivity(
-                    Intent.createChooser(
-                        sendIntent,
-                        context.getString(R.string.share_chooser_title)
-                    )
+                    Intent.createChooser(sendIntent, chooserTitle)
                 )
             } catch (e: android.content.ActivityNotFoundException) {
                 android.util.Log.w("HomeScreen", "No activity available to share streak", e)

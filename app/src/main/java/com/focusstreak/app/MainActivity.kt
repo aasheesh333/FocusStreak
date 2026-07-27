@@ -54,7 +54,23 @@ class MainActivity : ComponentActivity() {
         // This prevents incrementing on configuration changes like rotation.
         if (savedInstanceState == null) {
             lifecycleScope.launch {
-                (application as FocusStreakApplication).userPreferencesRepository.incrementAppLaunchCount()
+                val repo = (application as FocusStreakApplication).userPreferencesRepository
+                repo.incrementAppLaunchCount()
+                // Apply a Streak Freeze (if any are banked) to back-fill
+                // yesterday so a single missed day doesn't reset the
+                // user's streak. See UserPreferencesRepository docs.
+                val freezeApplied = repo.applyFreezeIfNeeded()
+                if (freezeApplied) {
+                    android.util.Log.i(
+                        "MainActivity",
+                        "Streak Freeze applied to preserve streak"
+                    )
+                    android.widget.Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.freeze_applied_toast),
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
 

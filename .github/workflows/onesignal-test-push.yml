@@ -19,6 +19,11 @@ on:
         default: 'Test Users'
         type: string
 
+# This workflow only calls the OneSignal REST API and never writes to
+# the repository, so it needs no GitHub token permissions at all.
+permissions:
+  contents: none
+
 jobs:
   send-test-push:
     runs-on: ubuntu-latest
@@ -27,6 +32,9 @@ jobs:
         env:
           ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
           ONESIGNAL_REST_API_KEY: ${{ secrets.ONESIGNAL_REST_API_KEY }}
+          HEADING: ${{ github.event.inputs.heading }}
+          MESSAGE: ${{ github.event.inputs.message }}
+          SEGMENT: ${{ github.event.inputs.segment }}
         run: |
           set -e
           if [ -z "$ONESIGNAL_APP_ID" ]; then
@@ -38,16 +46,26 @@ jobs:
             exit 1
           fi
 
+          # Build the JSON body with jq so workflow inputs containing
+          # double-quotes, backslashes, or other JSON-special characters
+          # are escaped correctly rather than breaking the payload.
+          BODY=$(jq -n \
+            --arg app_id "$ONESIGNAL_APP_ID" \
+            --arg heading "$HEADING" \
+            --arg message "$MESSAGE" \
+            --arg segment "$SEGMENT" \
+            '{
+              app_id: $app_id,
+              target_channel: "push",
+              name: "GitHub Actions Test Push",
+              headings: { en: $heading },
+              contents: { en: $message },
+              included_segments: [ $segment ]
+            }')
+
           curl -sS -X POST 'https://api.onesignal.com/notifications' \
             -H 'Content-Type: application/json; charset=utf-8' \
             -H "Authorization: Key ${ONESIGNAL_REST_API_KEY}" \
-            -d "{
-              \"app_id\": \"${ONESIGNAL_APP_ID}\",
-              \"target_channel\": \"push\",
-              \"name\": \"GitHub Actions Test Push\",
-              \"headings\": { \"en\": \"${{ github.event.inputs.heading }}\" },
-              \"contents\": { \"en\": \"${{ github.event.inputs.message }}\" },
-              \"included_segments\": [ \"${{ github.event.inputs.segment }}\" ]
-            }"
+            -d "$BODY"
 
           echo "Test push request sent. Check the OneSignal Dashboard > Delivery for status."
