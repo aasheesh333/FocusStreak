@@ -1,18 +1,11 @@
 package com.focusstreak.app.viewmodel
 
-import android.app.Application
 import androidx.test.core.app.ApplicationProvider
-import app.cash.turbine.test
-import com.focusstreak.app.FocusStreakApplication
-import com.focusstreak.app.ads.InterstitialAdManager
-import com.focusstreak.app.ads.RewardedAdManager
 import com.focusstreak.app.data.FocusCategories
 import com.focusstreak.app.data.UserPreferences
-import com.focusstreak.app.data.UserPreferencesRepository
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.mockk
 import io.mockk.unmockkAll
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,10 +23,10 @@ import org.robolectric.annotation.Config
 /**
  * Unit tests for [HomeViewModel].
  *
- * A Robolectric-injected [TestApplication] substitutes the three
- * `open val` exposed by [FocusStreakApplication] with relaxed mocks,
- * so the ViewModel exercises against in-memory fakes instead of the
- * real DataStore / AdMob managers.
+ * The Robolectric-injected [TestFocusStreakApplication] substitutes
+ * the production FocusStreakApplication's singleton properties with
+ * relaxed mocks, so the ViewModel exercises against in-memory fakes
+ * instead of the real DataStore / AdMob managers.
  *
  * Five tests cover the most important state transitions:
  *  1. `init` seeds `_timeInMillis` at `focusDuration × 60_000` ms
@@ -43,37 +36,25 @@ import org.robolectric.annotation.Config
  *  5. `selectCategory` delegates to the repository
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], application = TestApplication::class)
+@Config(sdk = [33], application = TestFocusStreakApplication::class)
 class HomeViewModelTest {
 
-    /** Test Application that swaps in mocked repo / ad managers. */
-    class TestApplication : FocusStreakApplication() {
-        val repo: UserPreferencesRepository = mockk(relaxed = true)
-        val interstitial: InterstitialAdManager = mockk(relaxed = true)
-        val rewarded: RewardedAdManager = mockk(relaxed = true)
-
-        override val userPreferencesRepository get() = repo
-        override val interstitialAdManager get() = interstitial
-        override val rewardedAdManager get() = rewarded
-
-        // Skip the real onCreate side-effects (MobileAds / OneSignal /
-        // notification channels) — they're not under test here.
-        override fun onCreate() { /* no-op */ }
-    }
-
-    private fun app(): TestApplication =
+    private fun app(): TestFocusStreakApplication =
         ApplicationProvider.getApplicationContext()
 
-    private fun newViewModel(prefs: UserPreferences): HomeViewModel {
-        everyAndConsume(prefs)
-        return HomeViewModel(app())
-    }
+    /** Default prefs used by the timer tests. */
+    private val defaultPrefs = UserPreferences.DEFAULT.copy(
+        focusDuration = 25,
+        bonusMinutes = 0,
+        appLaunchCount = 3,
+        focusCategory = FocusCategories.first().id,
+        soundEffectsEnabled = false
+    )
 
-    private fun everyAndConsume(prefs: UserPreferences) {
-        // `every { … } returns` re-arms the mock for repeated use; the
-        // MutableStateFlow lets later tests update prefs mid-flight.
+    private fun newViewModel(prefs: UserPreferences): HomeViewModel {
         coEvery { app().repo.userPreferencesFlow } returns MutableStateFlow(prefs)
         coEvery { app().repo.consumeBonusMinutes() } returns prefs.bonusMinutes
+        return HomeViewModel(app())
     }
 
     @Before
@@ -87,20 +68,12 @@ class HomeViewModelTest {
         unmockkAll()
     }
 
-    /** Default prefs used by the timer tests. */
-    private val defaultPrefs = UserPreferences.DEFAULT.copy(
-        focusDuration = 25,
-        bonusMinutes = 0,
-        appLaunchCount = 3,
-        focusCategory = FocusCategories.first().id,
-        soundEffectsEnabled = false
-    )
-
     // ---------- Tests ----------
 
     @Test
     fun `init seeds the timer at focusDuration x 60_000`() = runTest {
         val view = newViewModel(defaultPrefs)
+
         // init pushed `baseMinutes * 60_000` into _timeInMillis while Idle.
         assertThat(view.timeInMillis.value).isEqualTo(25 * 60 * 1000L)
         assertThat(view.timerState.value).isEqualTo(TimerState.Idle)
@@ -118,8 +91,10 @@ class HomeViewModelTest {
     @Test
     fun `startTimer enforces the appLaunchCount gt 1 interstitial gate`() = runTest {
         // appLaunchCount = 1 routes to Completed when the ticker hits 0;
-        // appLaunchCount > 1 routes to AdShowing. We assert the gate
-        // evaluated without exception by confirming the state exited Idle.
+        // appLaunchCount > 1 routes to AdShowing. With the unconfined
+        // dispatcher and a 25-minute ticker budget, we can only verify
+        // the gate evaluated without a crash by confirming the state
+        // exited Idle (it transitions to Running immediately).
         val view = newViewModel(defaultPrefs.copy(appLaunchCount = 1))
         view.startTimer()
         assertThat(view.timerState.value).isNotEqualTo(TimerState.Idle)
@@ -138,8 +113,8 @@ class HomeViewModelTest {
 
         view.resumeTimer()
         assertThat(view.timerState.value).isEqualTo(TimerState.Running)
-        // Resume must NOT reset the timer to the base value; it picks
-        // up from `remainingAfterPause`.
+        // Resume must NOT reset the timer to the base value; the new
+        // ticker picks up from `remainingAfterPause`.
         assertThat(view.timeInMillis.value).isEqualTo(remainingAfterPause)
     }
 

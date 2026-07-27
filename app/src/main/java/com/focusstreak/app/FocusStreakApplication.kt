@@ -12,7 +12,7 @@ import com.focusstreak.app.notification.NotificationChannels
 import com.focusstreak.app.notification.OneSignalManager
 import com.google.android.gms.ads.MobileAds
 
-class FocusStreakApplication : Application() {
+open class FocusStreakApplication : Application() {
 
     // Marked `open` so tests can substitute mocks via a Robolectric
     // @Config(application=...) subclass without needing to spin up the
