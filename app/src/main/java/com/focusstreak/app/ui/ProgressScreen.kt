@@ -167,8 +167,6 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
 
-            item { Spacer(modifier = Modifier.height(24.dp)) }
-
             if (categoryBreakdown.isNotEmpty()) {
                 item { SlideUp(delayMillis = 250) {
                     CategoryBreakdownSection(categories = categoryBreakdown)

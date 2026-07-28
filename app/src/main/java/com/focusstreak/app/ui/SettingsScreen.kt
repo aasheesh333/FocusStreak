@@ -349,7 +349,10 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             SettingsIcon(icon = Icons.Filled.Autorenew, bgColor = IconBgTeal, tint = IconTintTeal)
             Spacer(modifier = Modifier.width(16.dp))
             Text(
@@ -562,7 +565,10 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             SettingsIcon(icon = Icons.Filled.Notifications, bgColor = IconBgOrange, tint = IconTintOrange)
             Spacer(modifier = Modifier.width(16.dp))
             Text(
@@ -651,7 +657,10 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             SettingsIcon(icon = Icons.Filled.VolumeUp, bgColor = IconBgBlue, tint = IconTintBlue)
             Spacer(modifier = Modifier.width(16.dp))
             Text(
@@ -905,7 +914,8 @@ fun AboutSectionContent() {
             text = stringResource(id = R.string.version),
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.Black
+            color = Color.Black,
+            modifier = Modifier.weight(1f)
         )
         Text(
             text = BuildConfig.VERSION_NAME,
@@ -929,7 +939,8 @@ fun AboutItemRow(title: String, icon: ImageVector?, onClick: () -> Unit) {
             text = title,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.Black
+            color = Color.Black,
+            modifier = Modifier.weight(1f)
         )
         if (icon != null) {
             Icon(
