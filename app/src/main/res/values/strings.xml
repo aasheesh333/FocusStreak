@@ -18,6 +18,9 @@
     <string name="hours">Hours</string>
     <string name="sessions">Sessions</string>
     <string name="next_milestone">Next Milestone</string>
+    <string name="by_category">By Category</string>
+    <string name="empty_progress_title">No sessions yet</string>
+    <string name="empty_progress_body">Finish your first focus session to start building a streak and unlock progress insights.</string>
     <string name="seven_day_streak">7-Day Streak</string>
     <string name="fourteen_day_streak">14-Day Streak</string>
     <string name="thirty_day_streak">30-Day Streak</string>

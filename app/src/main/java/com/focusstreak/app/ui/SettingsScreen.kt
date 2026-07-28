@@ -64,6 +64,7 @@ import com.focusstreak.app.ui.theme.CardTitleSize
 import com.focusstreak.app.ui.theme.CardBodySize
 import com.focusstreak.app.ui.theme.HelperTextSize
 import com.focusstreak.app.ui.theme.SpaceL
+import com.focusstreak.app.ui.components.SlideUp
 import com.focusstreak.app.util.findActivity
 import com.focusstreak.app.viewmodel.SettingsUiEvent
 import com.focusstreak.app.viewmodel.SettingsViewModel
@@ -125,8 +126,9 @@ fun SettingsScreen(navController: NavController, settingsViewModel: SettingsView
                 item { SettingsSectionHeader(stringResource(id = R.string.focus).uppercase()) }
                 item {
                     SettingsCard {
-                        FocusSectionContent(settingsViewModel)
-
+                        SlideUp(delayMillis = 80) {
+                            FocusSectionContent(settingsViewModel)
+                        }
                     }
                 }
 
@@ -136,7 +138,9 @@ fun SettingsScreen(navController: NavController, settingsViewModel: SettingsView
                 item { SettingsSectionHeader(stringResource(id = R.string.notifications).uppercase()) }
                 item {
                     SettingsCard {
-                        NotificationsSectionContent(settingsViewModel)
+                        SlideUp(delayMillis = 160) {
+                            NotificationsSectionContent(settingsViewModel)
+                        }
                     }
                 }
 
@@ -146,9 +150,10 @@ fun SettingsScreen(navController: NavController, settingsViewModel: SettingsView
                 item { SettingsSectionHeader(stringResource(id = R.string.appearance).uppercase()) }
                 item {
                     SettingsCard {
-    AppearanceSectionContent(settingsViewModel)
-}
-
+                        SlideUp(delayMillis = 240) {
+                            AppearanceSectionContent(settingsViewModel)
+                        }
+                    }
                 }
 
                 item { Spacer(modifier = Modifier.height(24.dp)) }
@@ -160,7 +165,9 @@ fun SettingsScreen(navController: NavController, settingsViewModel: SettingsView
                     item { SettingsSectionHeader(stringResource(id = R.string.diagnostics).uppercase()) }
                     item {
                         SettingsCard {
-                            DiagnosticsSectionContent(settingsViewModel)
+                            SlideUp(delayMillis = 320) {
+                                DiagnosticsSectionContent(settingsViewModel)
+                            }
                         }
                     }
                     item { Spacer(modifier = Modifier.height(24.dp)) }
@@ -170,7 +177,9 @@ fun SettingsScreen(navController: NavController, settingsViewModel: SettingsView
                 item { SettingsSectionHeader(stringResource(id = R.string.about).uppercase()) }
                 item {
                     SettingsCard {
-                        AboutSectionContent()
+                        SlideUp(delayMillis = 400) {
+                            AboutSectionContent()
+                        }
                     }
                 }
 

@@ -49,6 +49,10 @@ import com.focusstreak.app.ui.theme.DarkBackground
 import com.focusstreak.app.ui.theme.DarkCardBackground
 import com.focusstreak.app.ui.theme.DarkIconBgPurple
 import com.focusstreak.app.ui.theme.DarkIconBgTeal
+import com.focusstreak.app.ui.theme.DarkIconBgOrange
+import com.focusstreak.app.ui.theme.DarkIconBgBlue
+import com.focusstreak.app.ui.theme.DarkIconTintTealAccent
+import com.focusstreak.app.ui.theme.DarkIconTintOrangeAccent
 import com.focusstreak.app.ui.theme.DarkBadgeGreen
 import com.focusstreak.app.ui.theme.TextPrimaryLight
 import com.focusstreak.app.ui.theme.TextSecondary
@@ -85,6 +89,10 @@ private val BadgeGreen = DarkBadgeGreen
 private val FireOrange = BrandOrange
 private val IconBgPurple = DarkIconBgPurple
 private val IconBgTeal = DarkIconBgTeal
+private val IconBgOrange = DarkIconBgOrange
+private val IconBgBlue = DarkIconBgBlue
+private val IconTintTealAccent = DarkIconTintTealAccent
+private val IconTintOrangeAccent = DarkIconTintOrangeAccent
 
 @Composable
 fun ProgressScreen(navController: NavController, progressViewModel: ProgressViewModel = viewModel()) {
@@ -92,6 +100,7 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
     val sessionStats by progressViewModel.sessionStats.collectAsState()
     val calendarDays by progressViewModel.calendarDays.collectAsState()
     val weekDays by progressViewModel.weekDays.collectAsState()
+    val categoryBreakdown by progressViewModel.categoryBreakdown.collectAsState()
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
     val scope = rememberCoroutineScope()
@@ -112,6 +121,17 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
             contentPadding = PaddingValues(bottom = 100.dp)
         ) {
             item { ProgressHeader(navController) }
+
+            if (sessionStats.totalSessions == 0) {
+                item {
+                    EmptyProgressState(onStartSession = { navController.popBackStack() })
+                }
+                // Still show the static section headers below so the
+                // user has something to look at — sections will be
+                // mostly empty but the structure teaches them what
+                // the app is going to track.
+                item { Spacer(modifier = Modifier.height(24.dp)) }
+            }
 
             item {
                 StreakSection(
@@ -138,6 +158,15 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
             item { SlideUp(delayMillis = 200) { StatsGrid(sessionStats) } }
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
+
+            item { Spacer(modifier = Modifier.height(24.dp)) }
+
+            if (categoryBreakdown.isNotEmpty()) {
+                item { SlideUp(delayMillis = 250) {
+                    CategoryBreakdownSection(categories = categoryBreakdown)
+                } }
+                item { Spacer(modifier = Modifier.height(24.dp)) }
+            }
 
             item { SlideUp(delayMillis = 300) { MonthlyHeatmapSection(calendarDays) } }
 
@@ -215,6 +244,67 @@ private fun ProgressHeader(navController: NavController) {
             fontSize = 16.sp,
             modifier = Modifier.align(Alignment.Center)
         )
+    }
+}
+
+@Composable
+fun EmptyProgressState(onStartSession: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // A subtle ring with an emoji/icon inside — soft illustration
+        // to fill the empty space without overwhelming the user.
+        Box(
+            modifier = Modifier
+                .size(96.dp)
+                .clip(CircleShape)
+                .background(AccentPurpleLight.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "\uD83C\uDFAF", // bullseye
+                fontSize = 40.sp
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(id = R.string.empty_progress_title),
+            color = TextWhite,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(id = R.string.empty_progress_body),
+            color = TextGrey,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(280.dp)
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        Button(
+            onClick = onStartSession,
+            shape = RoundedCornerShape(28.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = AccentPurple,
+                contentColor = TextWhite
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Filled.PlayArrow,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(id = R.string.start_focus),
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 
@@ -434,7 +524,7 @@ fun StatsGrid(stats: SessionStats) {
                 subtitle = stringResource(id = R.string.completed_sessions),
                 icon = Icons.Filled.CheckCircle,
                 iconBg = IconBgTeal,
-                iconTint = Color(0xFF26A69A),
+                iconTint = IconTintTealAccent,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -448,7 +538,7 @@ fun StatsGrid(stats: SessionStats) {
                 subtitle = stringResource(id = R.string.this_week),
                 icon = Icons.Filled.Today,
                 iconBg = IconBgOrange,
-                iconTint = Color(0xFFFF9800),
+                iconTint = IconTintOrangeAccent,
                 modifier = Modifier.weight(1f)
             )
             StatCard(
@@ -457,10 +547,74 @@ fun StatsGrid(stats: SessionStats) {
                 subtitle = stringResource(id = R.string.most_used),
                 icon = Icons.Filled.Category,
                 iconBg = IconBgTeal,
-                iconTint = Color(0xFF26A69A),
+                iconTint = IconTintTealAccent,
                 modifier = Modifier.weight(1f)
             )
         }
+    }
+}
+
+@Composable
+fun CategoryBreakdownSection(categories: List<com.focusstreak.app.viewmodel.CategoryStat>) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(id = R.string.by_category),
+            color = TextWhite,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+
+        val totalMinutes = categories.sumOf { it.minutes }.coerceAtLeast(1)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            shape = RoundedCornerShape(RadiusXL)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                categories.forEach { stat ->
+                    CategoryRow(
+                        name = stat.categoryName,
+                        sessions = stat.sessions,
+                        minutes = stat.minutes,
+                        share = stat.minutes.toFloat() / totalMinutes
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryRow(name: String, sessions: Int, minutes: Int, share: Float) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = name,
+                color = TextWhite,
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp
+            )
+            Text(
+                text = "$sessions sessions · ${minutes}m",
+                color = TextGrey,
+                fontSize = 12.sp
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        LinearProgressIndicator(
+            progress = { share.coerceIn(0f, 1f) },
+            color = AccentPurpleLight,
+            trackColor = Color.White.copy(alpha = 0.06f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(CircleShape)
+        )
     }
 }
 

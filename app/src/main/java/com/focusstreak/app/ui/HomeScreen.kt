@@ -157,7 +157,11 @@ fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = view
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                Timer(timeInMillis, totalTime)
+                Timer(
+                    timeInMillis = timeInMillis,
+                    totalTime = totalTime,
+                    isRunning = timerState is TimerState.Running
+                )
             }
 
             Footer(timerState, homeViewModel)
@@ -355,7 +359,7 @@ private fun CategorySelector(
         Text(
             text = labelText.uppercase(),
             color = TextGrey,
-            fontSize = 12.sp,
+            fontSize = SectionHeaderSize,
             fontWeight = FontWeight.Bold,
             letterSpacing = 2.sp,
             modifier = Modifier.padding(bottom = 10.dp)
@@ -389,7 +393,7 @@ private fun CategorySelector(
 }
 
 @Composable
-fun Timer(timeInMillis: Long, totalTime: Long) {
+fun Timer(timeInMillis: Long, totalTime: Long, isRunning: Boolean = false) {
     val minutes = (timeInMillis / 1000 / 60).toString().padStart(2, '0')
     val seconds = (timeInMillis / 1000 % 60).toString().padStart(2, '0')
     val progress = if (totalTime > 0) (totalTime - timeInMillis) / totalTime.toFloat() else 0f
@@ -399,6 +403,19 @@ fun Timer(timeInMillis: Long, totalTime: Long) {
     val glowColor = TimerGlowColor
     val progressBrush = Brush.verticalGradient(
         colors = listOf(AccentPurpleLight, AccentPurple)
+    )
+
+    // Subtle breathing pulse on the ring when the timer is running.
+    // The arc stays the same — only the glow's outer radius ebbs.
+    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "timer-pulse")
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = if (isRunning) 0.55f else 0.35f,
+        targetValue = if (isRunning) 0.95f else 0.35f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(durationMillis = 1500),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "glowAlpha"
     )
 
     Box(
@@ -427,7 +444,7 @@ fun Timer(timeInMillis: Long, totalTime: Long) {
                 drawIntoCanvas { canvas ->
                     val paint = Paint()
                     val frameworkPaint = paint.asFrameworkPaint()
-                    frameworkPaint.color = glowColor.toArgb()
+                    frameworkPaint.color = glowColor.copy(alpha = glowAlpha).toArgb()
                     frameworkPaint.style = android.graphics.Paint.Style.STROKE
                     frameworkPaint.strokeWidth = strokeWidth.toPx()
                     frameworkPaint.strokeCap = android.graphics.Paint.Cap.ROUND
@@ -470,7 +487,7 @@ fun Timer(timeInMillis: Long, totalTime: Long) {
                 color = AccentPurple,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
-                fontSize = 12.sp
+                fontSize = SectionHeaderSize
             )
         }
     }
