@@ -292,12 +292,15 @@ fun HomeHeader(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
+        com.focusstreak.app.ui.components.AutoSizeText(
             text = momentumText,
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentWidth(Alignment.CenterHorizontally),
             color = TextGrey,
-            textAlign = TextAlign.Center,
-            fontSize = MomentumTextSize,
-            modifier = Modifier.width(260.dp)
+            align = TextAlign.Center,
+            maxTextSize = 14,
+            minTextSize = 10
         )
 
         // Streak Freeze chip — only shown if the user has at least one
