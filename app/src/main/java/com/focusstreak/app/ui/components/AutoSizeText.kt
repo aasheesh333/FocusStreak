@@ -44,9 +44,9 @@ fun AutoSizeText(
         maxLines = 1,
         overflow = TextOverflow.Visible,
         autoSize = TextAutoSize.StepBased(
-            minTextSize = minTextSize.sp,
-            maxTextSize = maxTextSize.sp,
-            step = step.sp
+            minFontSize = minTextSize.sp,
+            maxFontSize = maxTextSize.sp,
+            stepSize = step.sp
         )
     )
 }
