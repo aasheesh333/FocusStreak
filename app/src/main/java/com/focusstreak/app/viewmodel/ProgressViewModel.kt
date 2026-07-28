@@ -33,6 +33,9 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     private val _calendarDays = MutableStateFlow<List<HeatmapCell>>(emptyList())
     val calendarDays: StateFlow<List<HeatmapCell>> = _calendarDays
 
+    private val _categoryBreakdown = MutableStateFlow<List<CategoryStat>>(emptyList())
+    val categoryBreakdown: StateFlow<List<CategoryStat>> = _categoryBreakdown
+
     // Locale.ROOT so the date key is stable across locale changes.
     private val dateKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).apply {
         timeZone = TimeZone.getDefault()
@@ -59,8 +62,32 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
                     weeklyMinutes = weeklyMinutes(history),
                     topCategory = topCategory(history)
                 )
+                _categoryBreakdown.value = buildCategoryBreakdown(history)
             }
         }
+    }
+
+    /**
+     * Aggregate completed sessions per category. Categories that the
+     * user hasn't touched yet are omitted so the breakdown list stays
+     * dense. Sorted by session count desc so the user's "default"
+     * category surfaces first.
+     */
+    private fun buildCategoryBreakdown(history: List<FocusSession>): List<CategoryStat> {
+        val completed = history.filter { it.completed }
+        if (completed.isEmpty()) return emptyList()
+        return FocusCategories
+            .map { def ->
+                val ofCat = completed.filter { it.category == def.id }
+                CategoryStat(
+                    categoryId = def.id,
+                    categoryName = def.name,
+                    sessions = ofCat.size,
+                    minutes = ofCat.sumOf { it.durationMinutes }
+                )
+            }
+            .filter { it.sessions > 0 }
+            .sortedByDescending { it.sessions }
     }
 
     private fun updateWeekDays(completedDates: Set<String>) {
@@ -133,4 +160,12 @@ data class SessionStats(
 data class HeatmapCell(
     val isCompleted: Boolean,
     val isToday: Boolean
+)
+
+/** Aggregated stats for a single focus category. */
+data class CategoryStat(
+    val categoryId: String,
+    val categoryName: String,
+    val sessions: Int,
+    val minutes: Int
 )

@@ -31,19 +31,24 @@ import androidx.compose.ui.window.DialogProperties
 import com.focusstreak.app.R
 import com.focusstreak.app.ui.components.ConfettiAnimation
 import com.focusstreak.app.ui.theme.FocusStreakTheme
+import com.focusstreak.app.ui.theme.DarkBackground
+import com.focusstreak.app.ui.theme.DarkOverlay
+import com.focusstreak.app.ui.theme.DarkCardBackground
+import com.focusstreak.app.ui.theme.TextPrimaryLight
+import com.focusstreak.app.ui.theme.TextSecondary
+import com.focusstreak.app.ui.theme.BrandPurple
+import com.focusstreak.app.ui.theme.BrandPurpleLight
+import com.focusstreak.app.ui.theme.BrandOrange
 
-// --- Colors matching Home Screen Dark Theme ---
-private val DialogBackground = Color(0xFF0F0A1E)
-private val SurfaceColor = Color(0xFF1A1625)
-private val TextWhite = Color.White
-private val TextGrey = Color(0xFF888888)
-private val AccentPurple = Color(0xFF7000FF)
-private val AccentPurpleLight = Color(0xFFA040FF)
-private val CardDarkBg = Color(0xFF1C182F)
-
-// Re-define local color for now to avoid dependency issues if not in Theme.kt
-// Renaming to avoid conflict if file-level property is an issue
-private val DialogFireOrange = Color(0xFFFF5722)
+// --- Dark palette aliases (sourced from theme/DesignTokens.kt) ---
+private val DialogBackground = DarkBackground
+private val SurfaceColor = DarkOverlay
+private val TextWhite = TextPrimaryLight
+private val TextGrey = TextSecondary
+private val AccentPurple = BrandPurple
+private val AccentPurpleLight = BrandPurpleLight
+private val CardDarkBg = DarkCardBackground
+private val DialogFireOrange = BrandOrange
 
 @Composable
 fun SessionCompleteDialog(
