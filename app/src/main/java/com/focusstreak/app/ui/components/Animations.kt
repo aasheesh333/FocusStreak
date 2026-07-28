@@ -106,8 +106,11 @@ fun SlideUp(
         targetState = visible,
         transitionSpec = {
             val anim = tween<Float>(durationMillis = 320)
-            val slide = slideInVertically(animationSpec = anim, initialOffsetY = { it / 2 })
-            val fade = fadeIn(animationSpec = anim)
+            val slide = slideInVertically(
+                animationSpec = tween(durationMillis = 320),
+                initialOffsetY = { it / 2 }
+            )
+            val fade = fadeIn(animationSpec = tween(durationMillis = 320))
             (slide + fade) togetherWith fadeOut(tween(0))
         },
         label = "SlideUp"

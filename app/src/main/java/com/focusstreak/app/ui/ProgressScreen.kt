@@ -44,6 +44,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.focusstreak.app.R
 import com.focusstreak.app.ui.theme.FocusStreakTheme
+import com.focusstreak.app.ui.components.SlideUp
 import com.focusstreak.app.ui.theme.DarkBackground
 import com.focusstreak.app.ui.theme.DarkCardBackground
 import com.focusstreak.app.ui.theme.DarkIconBgPurple
