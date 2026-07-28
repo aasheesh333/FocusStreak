@@ -83,6 +83,10 @@ import java.io.File
 import java.io.FileOutputStream
 
 // --- Dark palette aliases (sourced from theme/DesignTokens.kt) ---
+// Note: IconBgOrange is shared with SharedColors.kt (which holds the
+// light-mode orange chip color used in Settings). To avoid clashing
+// with that file-level declaration, the dark-mode alias below is
+// named distinctly.
 private val ProgressBackground = DarkBackground
 private val CardBackground = DarkCardBackground
 private val TextWhite = TextPrimaryLight
@@ -93,7 +97,7 @@ private val BadgeGreen = DarkBadgeGreen
 private val FireOrange = BrandOrange
 private val IconBgPurple = DarkIconBgPurple
 private val IconBgTeal = DarkIconBgTeal
-private val IconBgOrange = DarkIconBgOrange
+private val DarkIconBgOrangeAlias = DarkIconBgOrange
 private val IconBgBlue = DarkIconBgBlue
 private val IconTintTealAccent = DarkIconTintTealAccent
 private val IconTintOrangeAccent = DarkIconTintOrangeAccent
@@ -541,7 +545,7 @@ fun StatsGrid(stats: SessionStats) {
                 value = stats.weeklyMinutes.toString(),
                 subtitle = stringResource(id = R.string.this_week),
                 icon = Icons.Filled.Today,
-                iconBg = IconBgOrange,
+                iconBg = DarkIconBgOrangeAlias,
                 iconTint = IconTintOrangeAccent,
                 modifier = Modifier.weight(1f)
             )
