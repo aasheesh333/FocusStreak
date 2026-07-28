@@ -85,7 +85,7 @@ fun FadeIn(
                 fadeOut(tween(durationMillis = 0))
         },
         label = "FadeIn"
-    ) { _ -> content() }
+    ) { state -> content() }
 }
 
 /**
@@ -105,7 +105,6 @@ fun SlideUp(
     AnimatedContent(
         targetState = visible,
         transitionSpec = {
-            val anim = tween<Float>(durationMillis = 320)
             val slide = slideInVertically(
                 animationSpec = tween(durationMillis = 320),
                 initialOffsetY = { it / 2 }
@@ -114,5 +113,5 @@ fun SlideUp(
             (slide + fade) togetherWith fadeOut(tween(0))
         },
         label = "SlideUp"
-    ) { _ -> content() }
+    ) { state -> content() }
 }
