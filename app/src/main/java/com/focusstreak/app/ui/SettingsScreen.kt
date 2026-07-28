@@ -319,6 +319,7 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
         SettingsIcon(icon = Icons.Filled.Category, bgColor = IconBgPurple, tint = IconTintPurple)
         Spacer(modifier = Modifier.width(12.dp))
         LazyRow(
+            modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(FocusCategories) { category ->
@@ -428,7 +429,7 @@ private fun StreakFreezeInfoCard(
             tint = BrandFreezeBlueAccent
         )
         Spacer(modifier = Modifier.width(16.dp))
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = freezeCountLabel,
                 fontSize = 16.sp,
