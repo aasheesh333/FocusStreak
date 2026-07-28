@@ -44,27 +44,47 @@ import com.focusstreak.app.data.FocusCategories
 import com.focusstreak.app.ui.IconBgOrange
 import com.focusstreak.app.ui.IconTintOrange
 import com.focusstreak.app.ui.theme.FocusStreakTheme
+import com.focusstreak.app.ui.theme.LightBackground
+import com.focusstreak.app.ui.theme.LightCardBackground
+import com.focusstreak.app.ui.theme.LightDivider
+import com.focusstreak.app.ui.theme.LightIconBgPurple
+import com.focusstreak.app.ui.theme.LightIconTintPurple
+import com.focusstreak.app.ui.theme.LightIconBgTeal
+import com.focusstreak.app.ui.theme.LightIconTintTeal
+import com.focusstreak.app.ui.theme.LightIconBgBlue
+import com.focusstreak.app.ui.theme.LightIconTintBlue
+import com.focusstreak.app.ui.theme.LightToggleActiveTrack
+import com.focusstreak.app.ui.theme.LightToggleInactiveTrack
+import com.focusstreak.app.ui.theme.LightTrackSurface
+import com.focusstreak.app.ui.theme.LightSurfaceGray
+import com.focusstreak.app.ui.theme.TextSecondary
+import com.focusstreak.app.ui.theme.BrandFreezeBlueAccent
+import com.focusstreak.app.ui.theme.RadiusL
+import com.focusstreak.app.ui.theme.CardTitleSize
+import com.focusstreak.app.ui.theme.CardBodySize
+import com.focusstreak.app.ui.theme.HelperTextSize
+import com.focusstreak.app.ui.theme.SpaceL
 import com.focusstreak.app.util.findActivity
 import com.focusstreak.app.viewmodel.SettingsUiEvent
 import com.focusstreak.app.viewmodel.SettingsViewModel
 import kotlinx.coroutines.flow.collectLatest
 
-// --- Colors from Design ---
-private val ScreenBackground = Color(0xFFF8F9FA)
-private val SectionHeaderColor = Color(0xFF9E9E9E)
-private val CardBackground = Color.White
+// --- Light palette aliases (sourced from theme/DesignTokens.kt) ---
+private val ScreenBackground = LightBackground
+private val SectionHeaderColor = TextSecondary
+private val CardBackground = LightCardBackground
 
-private val IconBgPurple = Color(0xFFECE6F0)
-private val IconTintPurple = Color(0xFF6750A4)
+private val IconBgPurple = LightIconBgPurple
+private val IconTintPurple = LightIconTintPurple
 
-private val IconBgTeal = Color(0xFFE0F2F1)
-private val IconTintTeal = Color(0xFF009688)
+private val IconBgTeal = LightIconBgTeal
+private val IconTintTeal = LightIconTintTeal
 
-private val IconBgBlue = Color(0xFFE3F2FD)
-private val IconTintBlue = Color(0xFF2196F3)
+private val IconBgBlue = LightIconBgBlue
+private val IconTintBlue = LightIconTintBlue
 
-private val ToggleActiveTrack = Color(0xFF6750A4)
-private val ToggleInactiveTrack = Color(0xFFE0E0E0)
+private val ToggleActiveTrack = LightToggleActiveTrack
+private val ToggleInactiveTrack = LightToggleInactiveTrack
 
 @Composable
 fun SettingsScreen(navController: NavController, settingsViewModel: SettingsViewModel = viewModel()) {
@@ -271,7 +291,7 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
             .fillMaxWidth()
             .height(50.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFF5F5F5))
+            .background(LightTrackSurface)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -301,7 +321,7 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = IconTintPurple,
                         selectedLabelColor = Color.White,
-                        containerColor = Color(0xFFF5F5F5),
+                        containerColor = LightTrackSurface,
                         labelColor = Color.Black
                     )
                 )
@@ -310,7 +330,7 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
     }
 
     Spacer(modifier = Modifier.height(24.dp))
-    Divider(color = Color(0xFFF0F0F0), thickness = 1.dp)
+    Divider(color = LightDivider, thickness = 1.dp)
     Spacer(modifier = Modifier.height(16.dp))
 
     // Auto-start Break Row
@@ -357,7 +377,7 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
     }
 
     Spacer(modifier = Modifier.height(24.dp))
-    Divider(color = Color(0xFFF0F0F0), thickness = 1.dp)
+    Divider(color = LightDivider, thickness = 1.dp)
     Spacer(modifier = Modifier.height(16.dp))
 
     // Streak Freezes card — surfaces the user's banked freezes and
@@ -389,14 +409,14 @@ private fun StreakFreezeInfoCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFFF5F5F5))
+            .background(LightTrackSurface)
             .padding(16.dp),
         verticalAlignment = Alignment.Top
     ) {
         SettingsIcon(
             icon = Icons.Filled.AcUnit,
-            bgColor = Color(0xFFE3F2FD),
-            tint = Color(0xFF1976D2)
+            bgColor = LightIconBgBlue,
+            tint = BrandFreezeBlueAccent
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column {
@@ -419,8 +439,8 @@ private fun StreakFreezeInfoCard(
                     com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD.toFloat()
                 LinearProgressIndicator(
                     progress = { progress },
-                    color = Color(0xFF1976D2),
-                    trackColor = Color(0xFFDADADA),
+                    color = BrandFreezeBlueAccent,
+                    trackColor = LightSurfaceGray,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(4.dp)
@@ -612,7 +632,7 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
     }
 
     Spacer(modifier = Modifier.height(16.dp))
-    Divider(color = Color(0xFFF0F0F0), thickness = 1.dp)
+    Divider(color = LightDivider, thickness = 1.dp)
     Spacer(modifier = Modifier.height(16.dp))
 
     // Sound Effects Row
@@ -856,12 +876,12 @@ fun AboutSectionContent() {
         )
         context.startActivity(intent)
     }
-    Divider(color = Color(0xFFF0F0F0), thickness = 1.dp)
+    Divider(color = LightDivider, thickness = 1.dp)
     AboutItemRow(title = stringResource(id = R.string.privacy_policy), icon = Icons.Filled.ArrowForward) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://dhanuk.page.gd/FocusStreak/Privacy-Policy.html"))
         context.startActivity(intent)
     }
-    Divider(color = Color(0xFFF0F0F0), thickness = 1.dp)
+    Divider(color = LightDivider, thickness = 1.dp)
 
     // Version Row
     Row(

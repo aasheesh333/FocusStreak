@@ -47,6 +47,25 @@ import com.focusstreak.app.R
 import com.focusstreak.app.navigation.Screen
 import com.focusstreak.app.data.FocusCategories
 import com.focusstreak.app.ui.theme.FocusStreakTheme
+import com.focusstreak.app.ui.theme.DarkBackground
+import com.focusstreak.app.ui.theme.TextPrimaryLight
+import com.focusstreak.app.ui.theme.TextSecondary
+import com.focusstreak.app.ui.theme.BrandPurple
+import com.focusstreak.app.ui.theme.BrandPurpleLight
+import com.focusstreak.app.ui.theme.BrandPurpleDeep
+import com.focusstreak.app.ui.theme.BrandOrange
+import com.focusstreak.app.ui.theme.BrandFreezeBlue
+import com.focusstreak.app.ui.theme.DarkCardBackground
+import com.focusstreak.app.ui.theme.RadiusXXL
+import com.focusstreak.app.ui.theme.RadiusXL
+import com.focusstreak.app.ui.theme.DurLong
+import com.focusstreak.app.ui.theme.DisplayStreakSize
+import com.focusstreak.app.ui.theme.SectionHeaderSize
+import com.focusstreak.app.ui.theme.MomentumTextSize
+import com.focusstreak.app.ui.theme.ChipTextSize
+import com.focusstreak.app.ui.theme.SpaceS
+import com.focusstreak.app.ui.theme.SpaceM
+import com.focusstreak.app.ui.theme.SpaceL
 import com.focusstreak.app.util.findActivity
 import com.focusstreak.app.viewmodel.HomeViewModel
 import com.focusstreak.app.viewmodel.TimerState
@@ -55,15 +74,16 @@ import android.content.Context
 import android.content.Intent
 import kotlinx.coroutines.launch
 
-// --- Colors from Home Design (Dark Theme) ---
-private val HomeBackground = Color(0xFF0F0A1E)
-private val TextWhite = Color.White
-private val TextGrey = Color(0xFF888888)
-private val AccentPurple = Color(0xFF7000FF)
-private val AccentPurpleLight = Color(0xFFA040FF)
-private val TimerGlowColor = Color(0xFF5000B8)
-// Fallback if AccentFire isn't resolved from theme
-private val FireOrange = Color(0xFFFF5722)
+// Dark palette sourced from theme/DesignTokens.kt. Kept a private
+// alias for `HomeBackground` / `FireOrange` to preserve call-site
+// readability, but all hex values now live in one place.
+private val HomeBackground = DarkBackground
+private val TextWhite = TextPrimaryLight
+private val TextGrey = TextSecondary
+private val AccentPurple = BrandPurple
+private val AccentPurpleLight = BrandPurpleLight
+private val TimerGlowColor = BrandPurpleDeep
+private val FireOrange = BrandOrange
 
 @Composable
 fun HomeScreen(navController: NavController, homeViewModel: HomeViewModel = viewModel()) {
@@ -200,7 +220,7 @@ fun HomeHeader(
                 color = TextGrey,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
-                fontSize = 12.sp,
+                fontSize = SectionHeaderSize,
                 modifier = Modifier.align(Alignment.Center)
             )
             IconButton(
@@ -222,9 +242,9 @@ fun HomeHeader(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(RadiusXXL))
                 .background(Color.White.copy(alpha = 0.06f))
-                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(RadiusXXL))
                 .clickable { navController.navigate(Screen.Progress.route) }
                 .padding(horizontal = 20.dp, vertical = 14.dp)
         ) {
@@ -235,11 +255,16 @@ fun HomeHeader(
                 modifier = Modifier.size(32.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = daysText,
-                color = TextWhite,
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold
+            com.focusstreak.app.ui.components.AnimatedCount(
+                target = currentStreak,
+                content = { value ->
+                    Text(
+                        text = stringResource(id = R.string.days, value),
+                        color = TextWhite,
+                        fontSize = DisplayStreakSize,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             )
             Spacer(modifier = Modifier.width(8.dp))
             Icon(
@@ -263,7 +288,7 @@ fun HomeHeader(
             text = momentumText,
             color = TextGrey,
             textAlign = TextAlign.Center,
-            fontSize = 14.sp,
+            fontSize = MomentumTextSize,
             modifier = Modifier.width(260.dp)
         )
 
@@ -282,30 +307,30 @@ fun HomeHeader(
                 ((sessionsCompleted % com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD) / com.focusstreak.app.data.FREEZE_GRANT_THRESHOLD.toFloat())
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(SpaceS),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(RadiusXL))
                     .background(Color.White.copy(alpha = 0.04f))
-                    .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(20.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(RadiusXL))
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.AcUnit,
                     contentDescription = null,
-                    tint = Color(0xFFB4D8F5),
+                    tint = BrandFreezeBlue,
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
                     text = chipText,
                     color = TextWhite,
-                    fontSize = 12.sp
+                    fontSize = ChipTextSize
                 )
                 if (freezesAvailable == 0) {
                     // Tiny progress bar inline, showing how close the
                     // user is to earning their first freeze.
                     LinearProgressIndicator(
                         progress = { progressToNextFreeze },
-                        color = Color(0xFFB4D8F5),
+                        color = BrandFreezeBlue,
                         trackColor = Color.White.copy(alpha = 0.08f),
                         modifier = Modifier
                             .width(70.dp)

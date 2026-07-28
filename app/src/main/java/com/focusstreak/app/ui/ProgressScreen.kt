@@ -44,6 +44,24 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.focusstreak.app.R
 import com.focusstreak.app.ui.theme.FocusStreakTheme
+import com.focusstreak.app.ui.theme.DarkBackground
+import com.focusstreak.app.ui.theme.DarkCardBackground
+import com.focusstreak.app.ui.theme.DarkIconBgPurple
+import com.focusstreak.app.ui.theme.DarkIconBgTeal
+import com.focusstreak.app.ui.theme.DarkBadgeGreen
+import com.focusstreak.app.ui.theme.TextPrimaryLight
+import com.focusstreak.app.ui.theme.TextSecondary
+import com.focusstreak.app.ui.theme.BrandPurple
+import com.focusstreak.app.ui.theme.BrandPurpleLight
+import com.focusstreak.app.ui.theme.BrandOrange
+import com.focusstreak.app.ui.theme.RadiusL
+import com.focusstreak.app.ui.theme.RadiusXL
+import com.focusstreak.app.ui.theme.CardTitleSize
+import com.focusstreak.app.ui.theme.CardBodySize
+import com.focusstreak.app.ui.theme.DisplayStreakSize
+import com.focusstreak.app.ui.theme.SpaceS
+import com.focusstreak.app.ui.theme.SpaceM
+import com.focusstreak.app.ui.theme.SpaceL
 import com.focusstreak.app.util.findActivity
 import com.focusstreak.app.viewmodel.HeatmapCell
 import com.focusstreak.app.viewmodel.ProgressViewModel
@@ -55,17 +73,17 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-// --- Colors matching Home Screen Dark Theme ---
-private val ProgressBackground = Color(0xFF0F0A1E)
-private val CardBackground = Color(0xFF1C162E)
-private val TextWhite = Color.White
-private val TextGrey = Color(0xFF888888)
-private val AccentPurple = Color(0xFF7000FF)
-private val AccentPurpleLight = Color(0xFFA040FF)
-private val BadgeGreen = Color(0xFF00C853)
-private val FireOrange = Color(0xFFFF5722)
-private val IconBgPurple = Color(0xFF2D2644)
-private val IconBgTeal = Color(0xFF1E2D2F)
+// --- Dark palette aliases (sourced from theme/DesignTokens.kt) ---
+private val ProgressBackground = DarkBackground
+private val CardBackground = DarkCardBackground
+private val TextWhite = TextPrimaryLight
+private val TextGrey = TextSecondary
+private val AccentPurple = BrandPurple
+private val AccentPurpleLight = BrandPurpleLight
+private val BadgeGreen = DarkBadgeGreen
+private val FireOrange = BrandOrange
+private val IconBgPurple = DarkIconBgPurple
+private val IconBgTeal = DarkIconBgTeal
 
 @Composable
 fun ProgressScreen(navController: NavController, progressViewModel: ProgressViewModel = viewModel()) {
@@ -112,19 +130,21 @@ fun ProgressScreen(navController: NavController, progressViewModel: ProgressView
 
             item { Spacer(modifier = Modifier.height(32.dp)) }
 
-            item { ThisWeekSection(weekDays) }
+            item { SlideUp(delayMillis = 100) { ThisWeekSection(weekDays) } }
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
 
-            item { StatsGrid(sessionStats) }
+            item { SlideUp(delayMillis = 200) { StatsGrid(sessionStats) } }
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
 
-            item { MonthlyHeatmapSection(calendarDays) }
+            item { SlideUp(delayMillis = 300) { MonthlyHeatmapSection(calendarDays) } }
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
 
-            item { MilestonesSection(currentStreak = sessionStats.currentStreak) }
+            item { SlideUp(delayMillis = 400) {
+                MilestonesSection(currentStreak = sessionStats.currentStreak)
+            } }
         }
 
         // Floating Action Button
@@ -233,11 +253,16 @@ fun StreakSection(currentStreak: Int, bestStreak: Int, onShareClick: () -> Unit)
                     modifier = Modifier.size(40.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = stringResource(id = R.string.days, currentStreak),
-                    fontSize = 40.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextWhite
+                com.focusstreak.app.ui.components.AnimatedCount(
+                    target = currentStreak,
+                    content = { value ->
+                        Text(
+                            text = stringResource(id = R.string.days, value),
+                            fontSize = 40.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextWhite
+                        )
+                    }
                 )
             }
 
