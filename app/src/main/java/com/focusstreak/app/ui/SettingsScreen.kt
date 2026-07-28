@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -357,8 +358,7 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
     // Auto-start Break Row
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
             modifier = Modifier.weight(1f),
@@ -370,9 +370,12 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
                 text = stringResource(id = R.string.auto_start_break),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = textColorPrimary()
+                color = textColorPrimary(),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
+        Spacer(modifier = Modifier.width(16.dp))
         Switch(
             checked = userPreferences?.autoStartBreak ?: false,
             onCheckedChange = { viewModel.updateAutoStartBreak(it) },
@@ -573,8 +576,7 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
     // Daily Reminder Row
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
             modifier = Modifier.weight(1f),
@@ -586,9 +588,12 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
                 text = stringResource(id = R.string.daily_reminder),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = textColorPrimary()
+                color = textColorPrimary(),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
+        Spacer(modifier = Modifier.width(16.dp))
         Switch(
             checked = userPreferences?.dailyReminderEnabled == true && hasNotificationPermission,
             onCheckedChange = {
@@ -665,8 +670,7 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
     // Sound Effects Row
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
             modifier = Modifier.weight(1f),
@@ -678,9 +682,12 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
                 text = stringResource(id = R.string.sound_effects),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = textColorPrimary()
+                color = textColorPrimary(),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
+        Spacer(modifier = Modifier.width(16.dp))
         Switch(
             checked = userPreferences?.soundEffectsEnabled ?: true,
             onCheckedChange = { viewModel.updateSoundEffectsEnabled(it) },
@@ -870,7 +877,9 @@ fun DiagnosticsSectionContent(viewModel: SettingsViewModel) {
                         text = stringResource(id = R.string.use_test_ads),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
-                        color = textColorPrimary()
+                        color = textColorPrimary(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = stringResource(id = R.string.use_test_ads_subtitle),

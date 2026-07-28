@@ -316,37 +316,44 @@ fun EmptyProgressState(onStartSession: () -> Unit) {
 
 @Composable
 fun StreakSection(currentStreak: Int, bestStreak: Int, onShareClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth()
+    // Hero card bundling: Top 5% Users badge + Day count + Days Streak
+    // label + Best streak line + Share Streak button. Each item is
+    // vertically stacked and horizontally centre-aligned so the entire
+    // section reads as a single visual unit instead of floating items.
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        shape = RoundedCornerShape(RadiusXL)
     ) {
-        // Top Badge
-        Box(
+        Column(
             modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .background(BadgeGreen.copy(alpha = 0.1f))
-                .border(1.dp, BadgeGreen, RoundedCornerShape(50))
-                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = stringResource(id = R.string.top_users),
-                color = BadgeGreen,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp
-            )
-        }
+            // Top Badge
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(BadgeGreen.copy(alpha = 0.1f))
+                    .border(1.dp, BadgeGreen, RoundedCornerShape(50))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.top_users),
+                    color = BadgeGreen,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Streak Count with Animation
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+            // Streak Count with Animation — fire icon + "N days"
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 val fireIcon = ImageVector.vectorResource(id = R.drawable.ic_fire)
                 Icon(
@@ -356,59 +363,61 @@ fun StreakSection(currentStreak: Int, bestStreak: Int, onShareClick: () -> Unit)
                     modifier = Modifier.size(40.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                com.focusstreak.app.ui.components.AnimatedCount(
-                    target = currentStreak,
-                    content = { value ->
-                        Text(
-                            text = stringResource(id = R.string.days, value),
-                            fontSize = 40.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextWhite
-                        )
-                    }
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    com.focusstreak.app.ui.components.AnimatedCount(
+                        target = currentStreak,
+                        content = { value ->
+                            Text(
+                                text = stringResource(id = R.string.days, value),
+                                fontSize = 40.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextWhite
+                            )
+                        }
+                    )
+                    // Celebratory Animations
+                    CelebrationIcons()
+                }
             }
 
-            // Celebratory Animations
-            CelebrationIcons()
-        }
-
-        Text(
-            text = stringResource(id = R.string.day_streak),
-            color = TextGrey,
-            fontSize = 14.sp
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = stringResource(id = R.string.best_streak_format, bestStreak),
-            color = TextGrey,
-            fontSize = 14.sp
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = onShareClick,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White.copy(alpha = 0.1f),
-                contentColor = TextWhite
-            ),
-            shape = RoundedCornerShape(24.dp),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Share,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = AccentPurpleLight
-            )
-            Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = stringResource(id = R.string.share_streak),
-                fontWeight = FontWeight.SemiBold
+                text = stringResource(id = R.string.day_streak),
+                color = TextGrey,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
+
+            Text(
+                text = stringResource(id = R.string.best_streak_format, bestStreak),
+                color = TextGrey,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = onShareClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White.copy(alpha = 0.1f),
+                    contentColor = TextWhite
+                ),
+                shape = RoundedCornerShape(24.dp),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Share,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = AccentPurpleLight
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(id = R.string.share_streak),
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
