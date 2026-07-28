@@ -1,12 +1,10 @@
 package com.focusstreak.app.ui.components
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,9 +62,10 @@ fun AnimatedCount(
 }
 
 /**
- * Stable fade-in that respects token-defined motion durations.
- * Use as a wrapper for cards/sections that should ease in when first
- * composed (e.g., milestone cards, category breakdown).
+ * One-shot fade-in. Animates from invisible (0) to visible (1) after
+ * the given delay. The wrapped content is composed only when visible,
+ * which keeps first-paint cost low when several sections are
+ * staggered.
  */
 @Composable
 fun FadeIn(
@@ -85,7 +84,7 @@ fun FadeIn(
                 fadeOut(tween(durationMillis = 0))
         },
         label = "FadeIn"
-    ) { state -> content() }
+    ) { state -> if (state == 1) content() }
 }
 
 /**
@@ -113,5 +112,5 @@ fun SlideUp(
             (slide + fade) togetherWith fadeOut(tween(0))
         },
         label = "SlideUp"
-    ) { state -> content() }
+    ) { state -> if (state == 1) content() }
 }
