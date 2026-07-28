@@ -71,6 +71,9 @@ import com.focusstreak.app.viewmodel.SettingsViewModel
 import kotlinx.coroutines.flow.collectLatest
 
 // --- Light palette aliases (sourced from theme/DesignTokens.kt) ---
+// Note: Text/icon colors now read from MaterialTheme.colorScheme so the
+// Settings screen adapts to Dark / System theme instead of staying
+// hard-coded light. The light-mode shared chip colors remain available.
 private val ScreenBackground = LightBackground
 private val SectionHeaderColor = TextSecondary
 private val CardBackground = LightCardBackground
@@ -86,6 +89,14 @@ private val IconTintBlue = LightIconTintBlue
 
 private val ToggleActiveTrack = LightToggleActiveTrack
 private val ToggleInactiveTrack = LightToggleInactiveTrack
+
+// Theme-aware helpers. Compose resolves the current colorScheme at
+// composition, so calling these @Composable getters returns the right
+// contrast color whether the app is in Light, Dark, or System mode.
+@Composable private fun textColorPrimary() = MaterialTheme.colorScheme.onBackground
+@Composable private fun textColorSecondary() = MaterialTheme.colorScheme.onSurfaceVariant
+@Composable private fun cardSurface() = MaterialTheme.colorScheme.surface
+@Composable private fun dividerColor() = MaterialTheme.colorScheme.outlineVariant
 
 @Composable
 fun SettingsScreen(navController: NavController, settingsViewModel: SettingsViewModel = viewModel()) {
@@ -263,7 +274,7 @@ fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        colors = CardDefaults.cardColors(containerColor = cardSurface()),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
@@ -288,7 +299,7 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
             text = stringResource(id = R.string.focus_duration),
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.Black
+            color = textColorPrimary()
         )
     }
 
@@ -300,7 +311,7 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
             .fillMaxWidth()
             .height(50.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(LightTrackSurface)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -331,8 +342,8 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = IconTintPurple,
                         selectedLabelColor = Color.White,
-                        containerColor = LightTrackSurface,
-                        labelColor = Color.Black
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        labelColor = textColorPrimary()
                     )
                 )
             }
@@ -340,7 +351,7 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
     }
 
     Spacer(modifier = Modifier.height(24.dp))
-    Divider(color = LightDivider, thickness = 1.dp)
+    Divider(color = dividerColor(), thickness = 1.dp)
     Spacer(modifier = Modifier.height(16.dp))
 
     // Auto-start Break Row
@@ -359,7 +370,7 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
                 text = stringResource(id = R.string.auto_start_break),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.Black
+                color = textColorPrimary()
             )
         }
         Switch(
@@ -390,7 +401,7 @@ fun FocusSectionContent(viewModel: SettingsViewModel) {
     }
 
     Spacer(modifier = Modifier.height(24.dp))
-    Divider(color = LightDivider, thickness = 1.dp)
+    Divider(color = dividerColor(), thickness = 1.dp)
     Spacer(modifier = Modifier.height(16.dp))
 
     // Streak Freezes card — surfaces the user's banked freezes and
@@ -422,7 +433,7 @@ private fun StreakFreezeInfoCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(LightTrackSurface)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(16.dp),
         verticalAlignment = Alignment.Top
     ) {
@@ -437,13 +448,13 @@ private fun StreakFreezeInfoCard(
                 text = freezeCountLabel,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.Black
+                color = textColorPrimary()
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = freezeExplanation,
                 fontSize = 13.sp,
-                color = Color.Gray,
+                color = textColorSecondary(),
                 lineHeight = 18.sp
             )
             if (freezesAvailable < com.focusstreak.app.data.MAX_FREEZE_COUNT) {
@@ -453,7 +464,7 @@ private fun StreakFreezeInfoCard(
                 LinearProgressIndicator(
                     progress = { progress },
                     color = BrandFreezeBlueAccent,
-                    trackColor = LightSurfaceGray,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(4.dp)
@@ -467,7 +478,7 @@ private fun StreakFreezeInfoCard(
                         "$remainingToNext sessions to next freeze"
                     },
                     fontSize = 11.sp,
-                    color = Color.Gray
+                    color = textColorSecondary()
                 )
             }
         }
@@ -484,13 +495,13 @@ fun RowScope.DurationSegment(duration: Int, isSelected: Boolean, onClick: () -> 
             .weight(1f)
             .fillMaxHeight()
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isSelected) Color.White else Color.Transparent)
+            .background(if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = "${duration}m",
-            color = if (isSelected) Color.Black else Color.Gray,
+            color = if (isSelected) textColorPrimary() else textColorSecondary(),
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
         )
     }
@@ -503,14 +514,14 @@ fun RowScope.DurationSegmentCustom(isSelected: Boolean, onClick: () -> Unit) {
             .weight(1f)
             .fillMaxHeight()
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isSelected) Color.White else Color.Transparent)
+            .background(if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = Icons.Filled.Edit,
             contentDescription = stringResource(id = R.string.cd_custom),
-            tint = if (isSelected) Color.Black else Color.Gray,
+            tint = if (isSelected) textColorPrimary() else textColorSecondary(),
             modifier = Modifier.size(16.dp)
         )
     }
@@ -575,7 +586,7 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
                 text = stringResource(id = R.string.daily_reminder),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.Black
+                color = textColorPrimary()
             )
         }
         Switch(
@@ -616,7 +627,7 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
         ) {
             Text(
                 text = stringResource(id = R.string.remind_me_at),
-                color = Color.Gray,
+                color = textColorSecondary(),
                 fontSize = 14.sp
             )
 
@@ -648,7 +659,7 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
     }
 
     Spacer(modifier = Modifier.height(16.dp))
-    Divider(color = LightDivider, thickness = 1.dp)
+    Divider(color = dividerColor(), thickness = 1.dp)
     Spacer(modifier = Modifier.height(16.dp))
 
     // Sound Effects Row
@@ -667,7 +678,7 @@ fun NotificationsSectionContent(viewModel: SettingsViewModel) {
                 text = stringResource(id = R.string.sound_effects),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.Black
+                color = textColorPrimary()
             )
         }
         Switch(
@@ -699,7 +710,7 @@ fun AppearanceSectionContent(viewModel: SettingsViewModel) {
             text = stringResource(id = R.string.theme),
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.Black
+            color = textColorPrimary()
         )
     }
 
@@ -789,7 +800,7 @@ fun ThemeOptionCard(
         modifier = modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(16.dp))
-            .background(if (isSelected) Color(0xFFF3E5F5) else Color(0xFFF8F9FA))
+            .background(if (isSelected) IconTintPurple.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant)
             .border(
                 width = if (isSelected) 2.dp else 0.dp,
                 color = if (isSelected) ToggleActiveTrack else Color.Transparent,
@@ -820,7 +831,7 @@ fun ThemeOptionCard(
                  Icon(
                     imageVector = icon,
                     contentDescription = title,
-                    tint = if (isSelected) ToggleActiveTrack else Color.Gray,
+                    tint = if (isSelected) ToggleActiveTrack else textColorSecondary(),
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -828,7 +839,7 @@ fun ThemeOptionCard(
                     text = title,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (isSelected) ToggleActiveTrack else Color.Gray
+                    color = if (isSelected) ToggleActiveTrack else textColorSecondary()
                 )
             }
         }
@@ -859,12 +870,12 @@ fun DiagnosticsSectionContent(viewModel: SettingsViewModel) {
                         text = stringResource(id = R.string.use_test_ads),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color.Black
+                        color = textColorPrimary()
                     )
                     Text(
                         text = stringResource(id = R.string.use_test_ads_subtitle),
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = textColorSecondary()
                     )
                 }
             }
@@ -895,12 +906,12 @@ fun AboutSectionContent() {
         )
         context.startActivity(intent)
     }
-    Divider(color = LightDivider, thickness = 1.dp)
+    Divider(color = dividerColor(), thickness = 1.dp)
     AboutItemRow(title = stringResource(id = R.string.privacy_policy), icon = Icons.Filled.ArrowForward) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://dhanuk.page.gd/FocusStreak/Privacy-Policy.html"))
         context.startActivity(intent)
     }
-    Divider(color = LightDivider, thickness = 1.dp)
+    Divider(color = dividerColor(), thickness = 1.dp)
 
     // Version Row
     Row(
@@ -914,13 +925,13 @@ fun AboutSectionContent() {
             text = stringResource(id = R.string.version),
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.Black,
+            color = textColorPrimary(),
             modifier = Modifier.weight(1f)
         )
         Text(
             text = BuildConfig.VERSION_NAME,
             fontSize = 14.sp,
-            color = Color.Gray
+            color = textColorSecondary()
         )
     }
 }
@@ -939,21 +950,21 @@ fun AboutItemRow(title: String, icon: ImageVector?, onClick: () -> Unit) {
             text = title,
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.Black,
+            color = textColorPrimary(),
             modifier = Modifier.weight(1f)
         )
         if (icon != null) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color.Gray,
+                tint = textColorSecondary(),
                 modifier = Modifier.size(16.dp)
             )
         } else {
              Icon(
                 imageVector = Icons.Filled.Star, // Explicit star for Rate Us as per typical patterns, though design showed plain text, usually implies action.
                 contentDescription = null,
-                tint = Color.Gray,
+                tint = textColorSecondary(),
                  modifier = Modifier.size(16.dp)
             )
         }
@@ -965,11 +976,11 @@ fun ResetButton(onClick: () -> Unit) {
     Button(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color.White,
-            contentColor = Color(0xFFD32F2F) // Red
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.error
         ),
         shape = RoundedCornerShape(32.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFEBEE)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.15f)),
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)

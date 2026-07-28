@@ -340,8 +340,14 @@ fun StreakSection(currentStreak: Int, bestStreak: Int, onShareClick: () -> Unit)
         Spacer(modifier = Modifier.height(24.dp))
 
         // Streak Count with Animation
-        Box(contentAlignment = Alignment.Center) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
                 val fireIcon = ImageVector.vectorResource(id = R.drawable.ic_fire)
                 Icon(
                     imageVector = fireIcon,
