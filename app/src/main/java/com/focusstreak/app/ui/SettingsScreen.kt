@@ -27,7 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -888,6 +890,46 @@ fun DiagnosticsSectionContent(viewModel: SettingsViewModel) {
                     uncheckedBorderColor = Color.Transparent
                 )
             )
+        }
+
+        Divider(color = dividerColor(), thickness = 1.dp)
+
+        // Crashlytics smoke test: throws an uncaught exception so a real
+        // crash lands in the Firebase console within ~1 minute. Debug-only
+        // so it cannot ship to users.
+        val context = LocalContext.current
+        val haptics = LocalHapticFeedback.current
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    throw RuntimeException("Test crash from FocusStreak Diagnostics")
+                }
+                .padding(vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SettingsIcon(
+                icon = Icons.Filled.ErrorOutline,
+                bgColor = IconBgOrange,
+                tint = IconTintOrange
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(
+                    text = "Test Crash",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = textColorPrimary(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Send a test crash to Firebase Crashlytics",
+                    fontSize = 12.sp,
+                    color = textColorSecondary()
+                )
+            }
         }
     }
 }

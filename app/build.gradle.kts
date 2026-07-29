@@ -1,6 +1,12 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    // Firebase: parses app/google-services.json at build time and exposes the
+    // project/app identifiers to Firebase SDKs via BuildConfig / res values.
+    id("com.google.gms.google-services")
+    // Crashlytics: computes the build id and uploads mapping.txt for release
+    // builds so production crash stack traces are auto-deobfuscated.
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -8,7 +14,13 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = System.getenv("PACKAGE_NAME") ?: "com.focusstreak.app"
+        // The applicationId published on Google Play is `com.dhanuk.focusstreak`
+        // (signed by CI for every release). `PACKAGE_NAME` is provided by the
+        // release workflow; for local / PR debug builds we default to the same
+        // production applicationId so the google-services Gradle plugin and
+        // Firebase Crashlytics see a matching `client_info.package_name` in
+        // google-services.json for both variants.
+        applicationId = System.getenv("PACKAGE_NAME") ?: "com.dhanuk.focusstreak"
         minSdk = 24
         targetSdk = 36
         versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 2
@@ -145,6 +157,14 @@ dependencies {
     implementation("com.google.android.ump:user-messaging-platform:4.0.0")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
     implementation("com.onesignal:OneSignal:5.9.7")
+
+    // Firebase: use the BoM so SDK versions stay in sync. Crashlytics
+    // requires firebase-analytics for breadcrumbs & audience metrics.
+    // All chosen SDKs (crashlytics, analytics) are available on the
+    // Spark (free) plan.
+    implementation(platform("com.google.firebase:firebase-bom:34.16.0"))
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-analytics")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
     testImplementation("app.cash.turbine:turbine:1.2.1")
