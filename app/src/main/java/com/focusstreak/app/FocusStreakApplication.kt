@@ -11,6 +11,8 @@ import com.focusstreak.app.data.UserPreferencesRepository
 import com.focusstreak.app.notification.NotificationChannels
 import com.focusstreak.app.notification.OneSignalManager
 import com.google.android.gms.ads.MobileAds
+import com.google.firebase.FirebaseApp
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 open class FocusStreakApplication : Application() {
 
@@ -33,6 +35,19 @@ open class FocusStreakApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Initialise Firebase early. The Crashlytics SDK normally self-inits
+        // via its ContentProvider, but calling FirebaseApp.initializeApp
+        // explicitly ensures the default app is ready before any Firebase
+        // API is touched during OneSignal push registration (FCM token
+        // retrieval depends on a Firebase installation id).
+        FirebaseApp.initializeApp(this)
+
+        // Enable Crashlytics collection. The SDK is auto-initialised but
+        // collection can be disabled at runtime; we explicitly turn it
+        // on so crashes are reported from the very first session.
+        val crashlytics = FirebaseCrashlytics.getInstance()
+        crashlytics.isCrashlyticsCollectionEnabled = true
 
         // Warm up the Mobile Ads SDK. This is a no-op once initialised.
         // We register an OnInitializationCompleteListener so we can also

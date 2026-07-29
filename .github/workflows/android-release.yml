@@ -36,6 +36,15 @@ jobs:
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
           ls -la app/keystore.jks
 
+      # Materialise the Firebase config file from the repo secret so the
+      # `com.google.gms.google-services` Gradle plugin has something to
+      # parse during release assembly/AA/bundle. The file is gitignored
+      # so it never lives in the repo.
+      - name: Restore google-services.json
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > app/google-services.json
+          ls -la app/google-services.json
+
       - name: Lint & Unit Tests
         run: ./gradlew lintDebug lintRelease testDebugUnitTest
 
@@ -67,11 +76,19 @@ jobs:
           ONESIGNAL_APP_ID: ${{ secrets.ONESIGNAL_APP_ID }}
         run: ./gradlew assembleRelease bundleRelease
 
+      # Upload the ProGuard mapping.txt to Crashlytics so production
+      # crash stack traces are auto-deobfuscated in the console. The
+      # `uploadCrashlyticsMappingFileRelease` task is added by the
+      # com.google.firebase.crashlytics Gradle plugin.
+      - name: Upload mapping to Crashlytics
+        run: ./gradlew uploadCrashlyticsMappingFileRelease
+        continue-on-error: true
+
       # Clean up the keystore after the build finishes to avoid leaving
       # signing material in the workspace.
       - name: Remove Keystore
         if: always()
-        run: rm -f app/keystore.jks
+        run: rm -f app/keystore.jks app/google-services.json
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

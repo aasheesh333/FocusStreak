@@ -50,6 +50,19 @@
 }
 
 # ----------------------------------------------------------------------
+# Firebase Crashlytics — keep the SDK and the Firebase common classes
+# so crashes are recorded and deobfuscated. Source file + line number
+# attributes are required for stack-trace deobfuscation.
+# ----------------------------------------------------------------------
+-keep class com.google.firebase.crashlytics.** { *; }
+-dontwarn com.google.firebase.crashlytics.**
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+-keepattributes SourceFile,LineNumberTable
+# Keep the BuildConfig read by Crashlytics for the app version string.
+-keep class com.focusstreak.app.BuildConfig { *; }
+
+# ----------------------------------------------------------------------
 # AndroidX WorkManager - keep Worker subclasses by name; WorkManager
 # instantiates workers via reflection on Class<*>.
 # ----------------------------------------------------------------------

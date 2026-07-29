@@ -32,6 +32,14 @@ jobs:
       - name: Set up Android build environment
         uses: ./.github/actions/setup-android-env
 
+      # Provide the Firebase config so the google-services Gradle plugin
+      # can parse it during debug assembly/lint. Same secret as the
+      # release workflow uses; the file is .gitignored.
+      - name: Restore google-services.json
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > app/google-services.json
+          ls -la app/google-services.json
+
       # Debug build + tests only. No keystore, no signing, no AdMob prod env
       # vars are needed for this workflow.
       - name: Lint
