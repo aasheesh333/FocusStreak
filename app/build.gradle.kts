@@ -14,7 +14,13 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = System.getenv("PACKAGE_NAME") ?: "com.focusstreak.app"
+        // The applicationId published on Google Play is `com.dhanuk.focusstreak`
+        // (signed by CI for every release). `PACKAGE_NAME` is provided by the
+        // release workflow; for local / PR debug builds we default to the same
+        // production applicationId so the google-services Gradle plugin and
+        // Firebase Crashlytics see a matching `client_info.package_name` in
+        // google-services.json for both variants.
+        applicationId = System.getenv("PACKAGE_NAME") ?: "com.dhanuk.focusstreak"
         minSdk = 24
         targetSdk = 36
         versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 2
