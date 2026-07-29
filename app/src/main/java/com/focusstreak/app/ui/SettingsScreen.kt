@@ -910,7 +910,7 @@ fun DiagnosticsSectionContent(viewModel: SettingsViewModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             SettingsIcon(
-                icon = Icons.Filled.Crashing,
+                icon = Icons.Filled.ErrorOutline,
                 bgColor = IconBgOrange,
                 tint = IconTintOrange
             )
