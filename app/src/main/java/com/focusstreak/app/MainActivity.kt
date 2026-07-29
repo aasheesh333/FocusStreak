@@ -103,10 +103,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            // Set up the OneSignal push-subscription observer so we can show
-            // the official integration-complete dialog once the device is
-            // registered. This is gated to show only once.
-            OneSignalManager.setupPushSubscriptionObserver(this)
         } catch (t: Throwable) {
             Log.e(TAG, "setContent / initial composition failed", t)
             showFallbackUi(t)

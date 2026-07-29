@@ -41,8 +41,10 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun FocusStreakTheme(
     theme: String = "System",
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Dynamic color is available on Android 12+ but conflicts with our
+    // custom BackgroundDark/surface colors — disable by default so the
+    // hand-crafted dark/light schemes are always used.
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val darkTheme = when (theme) {
