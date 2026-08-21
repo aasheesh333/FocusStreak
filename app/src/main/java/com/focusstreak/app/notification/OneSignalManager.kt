@@ -33,6 +33,17 @@ object OneSignalManager {
             return
         }
 
+        // OneSignal is FCM-backed and requires Google Play Services. On
+        // non-GMS devices initializing it surfaces the system
+        // "Google Play services required" prompt — skip instead.
+        if (!com.focusstreak.app.util.GmsAvailability.isAvailable(context)) {
+            android.util.Log.i(
+                "OneSignalManager",
+                "Google Play Services not available; skipping OneSignal initialization."
+            )
+            return
+        }
+
         // Verbose logging in debug builds only.
         if (com.focusstreak.app.BuildConfig.DEBUG) {
             OneSignal.Debug.logLevel = LogLevel.VERBOSE
@@ -45,10 +56,18 @@ object OneSignalManager {
     /**
      * Request the runtime push notification permission through OneSignal.
      * This is the only place in the app where push permission is requested.
+     * No-op on devices without Google Play Services (push is unavailable).
      */
     fun requestPushPermission() {
         CoroutineScope(Dispatchers.Main).launch {
-            OneSignal.Notifications.requestPermission(true)
+            try {
+                OneSignal.Notifications.requestPermission(true)
+            } catch (t: Throwable) {
+                android.util.Log.w(
+                    "OneSignalManager",
+                    "Push permission request failed (non-GMS device?)", t
+                )
+            }
         }
     }
 }

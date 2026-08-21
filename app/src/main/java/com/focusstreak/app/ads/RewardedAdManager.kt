@@ -3,6 +3,7 @@ package com.focusstreak.app.ads
 import android.app.Activity
 import android.content.Context
 import com.focusstreak.app.BuildConfig
+import com.focusstreak.app.util.GmsAvailability
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.rewarded.RewardedAd
@@ -31,6 +32,16 @@ class RewardedAdManager(private val context: Context) {
         else BuildConfig.ADMOB_REWARDED_ID
 
     fun loadAd() {
+        // AdMob requires Google Play Services — never issue a request on
+        // non-GMS devices (OPPO/Vivo CN-market, Huawei, Amazon Fire, etc.),
+        // where it would surface a "Google Play services required" prompt.
+        if (!GmsAvailability.isAvailable(context)) {
+            android.util.Log.i(
+                "RewardedAdManager",
+                "Skipping ad load — Google Play Services not available"
+            )
+            return
+        }
         val adRequest = AdRequest.Builder().build()
         val unitId = adUnitId()
         android.util.Log.i(
