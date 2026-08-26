@@ -145,7 +145,7 @@ def cmd_upload(pkg: str, aab: str, track: str, fraction: float, notes: str) -> N
         method="POST",
         headers={
             "Authorization": f"Bearer {tok}",
-            "Content-Type": "application/x-aab",
+            "Content-Type": "application/octet-stream",
             "X-Goog-Upload-Protocol": "resumable",
             "X-Goog-Upload-Command": "start",
             "X-Goog-Upload-Header-Content-Length": str(len(body)),
@@ -162,7 +162,7 @@ def cmd_upload(pkg: str, aab: str, track: str, fraction: float, notes: str) -> N
         method="PUT",
         headers={
             "Authorization": f"Bearer {tok}",
-            "Content-Type": "application/x-aab",
+            "Content-Type": "application/octet-stream",
             "X-Goog-Upload-Offset": "0",
             "X-Goog-Upload-Command": "upload, finalize",
         },
