@@ -184,12 +184,13 @@ def cmd_upload(pkg: str, aab: str, track: str, fraction: float, notes: str) -> N
     # for users who already have them; the track just points at the latest.
     api("PUT", f"/applications/{pkg}/edits/{edit}/tracks/{track}", tok, {"releases": [new_rel]})
 
-    # commit
+    # commit — let changes be sent for review automatically (Play API v3
+    # now rejects changesNotSentForReview=true with 400)
     api(
         "POST",
         f"/applications/{pkg}/edits/{edit}:commit",
         tok,
-        body={"changesNotSentForReview": True},
+        body={},
     )
     print(f"version_code={vc}")
 
