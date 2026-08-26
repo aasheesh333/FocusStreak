@@ -12,6 +12,7 @@ import com.focusstreak.app.notification.NotificationChannels
 import com.focusstreak.app.notification.OneSignalManager
 import com.focusstreak.app.util.GmsAvailability
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
 import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 
@@ -68,6 +69,18 @@ open class FocusStreakApplication : Application() {
             // outside EEA/UK the ConsentManager invokes its onComplete
             // synchronously (well, on next dispatch) so this is a no-op
             // duplicate in the best case.
+            //
+            // Cap served creatives at "G". FocusStreak's own rejection was the
+            // Play installer check, not ad content — but PicFix Pro and
+            // GovPhoto were both rejected by OPPO for gambling creatives in
+            // their ad slots, and G is the cap that cleared PicFix's review.
+            // Applying it here pre-empts the same rejection on the next
+            // submission. Per-app only; the AdMob account rating stays at MA.
+            MobileAds.setRequestConfiguration(
+                RequestConfiguration.Builder()
+                    .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+                    .build()
+            )
             MobileAds.initialize(this) {
                 android.util.Log.i("FocusStreakApp", "MobileAds SDK initialized")
             }

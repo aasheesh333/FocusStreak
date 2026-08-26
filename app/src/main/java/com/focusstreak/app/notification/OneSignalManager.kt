@@ -49,6 +49,17 @@ object OneSignalManager {
             OneSignal.Debug.logLevel = LogLevel.VERBOSE
         }
 
+        // Suppress OneSignal's built-in "To receive push notifications please
+        // press 'Update' to enable 'Google Play services'" dialog. The SDK
+        // shows it from PushRegistratorAbstractGoogle when FCM registration
+        // returns OUTDATED_GOOGLE_PLAY_SERVICES_APP, with no user action and
+        // no way to dismiss the underlying prompt — which is exactly what OPPO
+        // rejected 2.3.0/2.3.1 for ("Mandatorily update / download from Google
+        // Play"). Must be set BEFORE initWithContext to take effect on the
+        // first registration attempt. Push simply stays unavailable on such
+        // devices instead of nagging the user toward Play.
+        OneSignal.disableGMSMissingPrompt = true
+
         OneSignal.initWithContext(context.applicationContext, appId)
         android.util.Log.i("OneSignalManager", "OneSignal initialized")
     }
