@@ -117,6 +117,24 @@ def insert_edit(tok: str, pkg: str) -> str:
     return api("POST", f"/applications/{pkg}/edits", tok)["id"]
 
 
+def _api_upload(url: str, body: bytes, tok: str) -> dict:
+    """Simple media upload (uploadType=media). Raises Fail on HTTP error."""
+    put = urllib.request.Request(
+        url,
+        data=body,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {tok}",
+            "Content-Type": "application/octet-stream",
+            "Content-Length": str(len(body)),
+        },
+    )
+    try:
+        return json.load(urllib.request.urlopen(put, timeout=600))
+    except urllib.error.HTTPError as e:
+        raise Fail(f"blob upload failed: {e.code} {e.read().decode()[:200]}")
+
+
 def cmd_next_version_code(pkg: str) -> None:
     tok = token()
     edit = insert_edit(tok, pkg)
@@ -151,19 +169,21 @@ def cmd_upload(pkg: str, aab: str, track: str, fraction: float, notes: str) -> N
     # "Media type 'application/x-zip' is not supported")
     with open(aab, "rb") as f:
         body = f.read()
-    put = urllib.request.Request(
-        f"{UPLOAD_BASE}/applications/{pkg}/edits/{edit}/bundles?uploadType=media",
-        data=body,
-        method="POST",
-        headers={
-            "Authorization": f"Bearer {tok}",
-            "Content-Type": "application/octet-stream",
-        },
-    )
     try:
-        up = json.load(urllib.request.urlopen(put, timeout=600))
-    except urllib.error.HTTPError as e:
-        raise Fail(f"blob upload failed: {e.code} {e.read().decode()[:200]}")
+        up = _api_upload(
+            f"{UPLOAD_BASE}/upload/applications/{pkg}/edits/{edit}/bundles?uploadType=media",
+            body, tok,
+        )
+    except Fail as e:
+        # Edit may have expired during upload — recreate and retry once
+        if "expired" in str(e).lower():
+            edit = insert_edit(tok, pkg)
+            up = _api_upload(
+                f"{UPLOAD_BASE}/upload/applications/{pkg}/edits/{edit}/bundles?uploadType=media",
+                body, tok,
+            )
+        else:
+            raise
     vc = int(up["versionCode"])
     if vc in existing:
         raise Fail(
