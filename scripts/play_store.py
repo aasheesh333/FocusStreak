@@ -171,7 +171,7 @@ def cmd_upload(pkg: str, aab: str, track: str, fraction: float, notes: str) -> N
         body = f.read()
     try:
         up = _api_upload(
-            f"{UPLOAD_BASE}/upload/applications/{pkg}/edits/{edit}/bundles?uploadType=media",
+            f"{UPLOAD_BASE}/applications/{pkg}/edits/{edit}/bundles?uploadType=media",
             body, tok,
         )
     except Fail as e:
@@ -179,7 +179,7 @@ def cmd_upload(pkg: str, aab: str, track: str, fraction: float, notes: str) -> N
         if "expired" in str(e).lower():
             edit = insert_edit(tok, pkg)
             up = _api_upload(
-                f"{UPLOAD_BASE}/upload/applications/{pkg}/edits/{edit}/bundles?uploadType=media",
+                f"{UPLOAD_BASE}/applications/{pkg}/edits/{edit}/bundles?uploadType=media",
                 body, tok,
             )
         else:
