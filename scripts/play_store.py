@@ -168,7 +168,6 @@ def cmd_upload(pkg: str, aab: str, track: str, fraction: float, notes: str) -> N
         track_info = api("GET", f"/applications/{pkg}/edits/{edit}/tracks/{track}", tok)
     except Fail:
         track_info = {}
-    releases = list(track_info.get("releases", []))
     new_rel: dict = {
         "name": f"{vc}",
         "versionCodes": [str(vc)],
@@ -179,8 +178,11 @@ def cmd_upload(pkg: str, aab: str, track: str, fraction: float, notes: str) -> N
         new_rel.update(status="completed")
     if notes.strip():
         new_rel["releaseNotes"] = [{"language": "en-US", "text": notes.strip()[:500]}]
-    releases.insert(0, new_rel)
-    api("PUT", f"/applications/{pkg}/edits/{edit}/tracks/{track}", tok, {"releases": releases})
+    # Replace the release list with just the new release — a track can hold
+    # only ONE completed production release at a time ("Only one completed
+    # release is allowed" 400 otherwise). Old versions remain downloadable
+    # for users who already have them; the track just points at the latest.
+    api("PUT", f"/applications/{pkg}/edits/{edit}/tracks/{track}", tok, {"releases": [new_rel]})
 
     # commit
     api(
