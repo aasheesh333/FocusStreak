@@ -102,8 +102,12 @@
     <string name="last_six_weeks">Last 6 Weeks</string>
 
     <!--
-      Play Store listing URLs. The package name must match the
-      production applicationId (the PACKAGE_NAME CI secret).
+      Store listing URL. NOTE: no longer used for the in-app "Rate us" entry
+      point — see util/StoreLinks.kt, which resolves the listing for whichever
+      store the app was actually installed from (OPPO App Market, Play, ...).
+      Hardcoding a Play URL got the app rejected by OPPO as "Mandatorily
+      update / download from Google Play". Kept only for store-listing
+      metadata / release tooling.
     -->
     <string name="play_store_listing_url" translatable="false">https://play.google.com/store/apps/details?id=com.dhanuk.focusstreak</string>
 

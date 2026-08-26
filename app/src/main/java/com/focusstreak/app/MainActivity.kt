@@ -20,6 +20,7 @@ import com.focusstreak.app.data.UserPreferences
 import com.focusstreak.app.navigation.AppNavigation
 import com.focusstreak.app.notification.OneSignalManager
 import com.focusstreak.app.ui.theme.FocusStreakTheme
+import com.focusstreak.app.util.GmsAvailability
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -46,8 +47,13 @@ class MainActivity : ComponentActivity() {
         // first ad load for this session — this is what avoids the
         // "first session in EEA/UK = NO_FILL" race where a load
         // request beats the consent gather.
-        ConsentManager(this).requestConsentIfNeeded(this) {
-            (application as FocusStreakApplication).loadAllAds()
+        // UMP is a GMS API — skip entirely on devices without Google Play
+        // Services (OPPO/Vivo CN-market, Huawei, etc.), where ads are also
+        // disabled (see FocusStreakApplication).
+        if (GmsAvailability.isAvailable(this)) {
+            ConsentManager(this).requestConsentIfNeeded(this) {
+                (application as FocusStreakApplication).loadAllAds()
+            }
         }
 
         // Increment App Launch Count only if this is a fresh start (savedInstanceState is null)

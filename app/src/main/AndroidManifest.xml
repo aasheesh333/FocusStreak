@@ -5,6 +5,17 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!--
+      Package visibility for store deep links (Android 11+). Needed so
+      StoreLinks can query which app store is present and route the "Rate us"
+      link there instead of hardcoding Google Play — the behaviour OPPO
+      rejected as "Mandatorily update / download from Google Play".
+    -->
+    <queries>
+        <package android:name="com.heytap.market" />
+        <package android:name="com.oppo.market" />
+    </queries>
+
     <application
         android:name=".FocusStreakApplication"
         android:allowBackup="true"

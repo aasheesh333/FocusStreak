@@ -937,16 +937,21 @@ fun DiagnosticsSectionContent(viewModel: SettingsViewModel) {
 @Composable
 fun AboutSectionContent() {
     val context = LocalContext.current
-    val playStoreUrl = stringResource(id = R.string.play_store_listing_url)
 
-    AboutItemRow(title = stringResource(id = R.string.rate_us), icon = null) {
-        val intent = Intent(
-            Intent.ACTION_VIEW,
-            Uri.parse(playStoreUrl)
-        )
-        context.startActivity(intent)
+    // Resolve the store listing for whichever store is actually on the device.
+    // Hardcoding a Play Store URL is what OPPO flagged as "Mandatorily
+    // update / download from Google Play", and it dead-ends on devices with no
+    // Play Store at all — so hide the row when no store can handle it.
+    val storeIntent = remember(context) {
+        com.focusstreak.app.util.StoreLinks.storeListingIntent(context)
     }
-    Divider(color = dividerColor(), thickness = 1.dp)
+
+    if (storeIntent != null) {
+        AboutItemRow(title = stringResource(id = R.string.rate_us), icon = null) {
+            runCatching { context.startActivity(storeIntent) }
+        }
+        Divider(color = dividerColor(), thickness = 1.dp)
+    }
     AboutItemRow(title = stringResource(id = R.string.privacy_policy), icon = Icons.Filled.ArrowForward) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://dhanuk.page.gd/FocusStreak/Privacy-Policy.html"))
         context.startActivity(intent)
