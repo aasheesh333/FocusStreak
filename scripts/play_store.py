@@ -137,34 +137,18 @@ def cmd_upload(pkg: str, aab: str, track: str, fraction: float, notes: str) -> N
     bundles = api("GET", f"/applications/{pkg}/edits/{edit}/bundles", tok).get("bundles", [])
     existing = {int(b.get("versionCode", 0)) for b in bundles}
 
-    # upload bundle (resumable, single chunk)
+    # upload bundle (simple media upload — resumable upload no longer works,
+    # Google's backend sniffs the zip structure of AABs and rejects with
+    # "Media type 'application/x-zip' is not supported")
     with open(aab, "rb") as f:
         body = f.read()
-    start = urllib.request.Request(
-        f"{UPLOAD_BASE}/applications/{pkg}/edits/{edit}/bundles?uploadType=resumable",
+    put = urllib.request.Request(
+        f"{UPLOAD_BASE}/applications/{pkg}/edits/{edit}/bundles?uploadType=media",
+        data=body,
         method="POST",
         headers={
             "Authorization": f"Bearer {tok}",
             "Content-Type": "application/octet-stream",
-            "X-Goog-Upload-Protocol": "resumable",
-            "X-Goog-Upload-Command": "start",
-            "X-Goog-Upload-Header-Content-Length": str(len(body)),
-        },
-    )
-    try:
-        init = urllib.request.urlopen(start, timeout=60)
-        location = init.headers["X-Goog-Upload-URL"]
-    except urllib.error.HTTPError as e:
-        raise Fail(f"blob upload start failed: {e.code} {e.read().decode()[:200]}")
-    put = urllib.request.Request(
-        location,
-        data=body,
-        method="PUT",
-        headers={
-            "Authorization": f"Bearer {tok}",
-            "Content-Type": "application/octet-stream",
-            "X-Goog-Upload-Offset": "0",
-            "X-Goog-Upload-Command": "upload, finalize",
         },
     )
     try:
