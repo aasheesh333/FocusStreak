@@ -176,7 +176,7 @@ def cmd_upload(pkg: str, aab: str, track: str, fraction: float, notes: str) -> N
     if track == "staged_rollout_draft":
         new_rel.update(status="inProgress", userFraction=fraction)
     else:
-        new_rel.update(status="completed", fraction=1.0)
+        new_rel.update(status="completed")
     if notes.strip():
         new_rel["releaseNotes"] = [{"language": "en-US", "text": notes.strip()[:500]}]
     releases.insert(0, new_rel)
